@@ -358,7 +358,7 @@
                         
                         <div class="form-group small">
                             <label for="referenceNumber">Reference Number:</label>
-                            <div class="form-row">
+                            <div class="form-group">
                                 <input type="text" id="refCheck" name="refCheck">
                             </div>
                         </div>
@@ -371,7 +371,12 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <button type="button" class="obtain-info-btn">Obtain product info</button>
+                            <label for="catalogFile">Upload Motorcycle Parts Catalog (PDF):</label>
+                            <input type="file" id="catalogFile" name="catalogFile" accept=".pdf" style="margin-bottom: 10px;">
+                            <button type="button" class="obtain-info-btn" id="extractBtn">Obtain product info</button>
+                            <div id="loadingMessage" style="display: none; color: #4CAF50; margin-top: 5px;">
+                                🔄 Extracting information from catalog...
+                            </div>
                         </div>
                     </div>
 
@@ -426,9 +431,78 @@
             alert('Form submitted! Check console for data.');
         });
 
-        // Obtain product info button
-        document.querySelector('.obtain-info-btn').addEventListener('click', function() {
-            alert('AI extraction feature - This would trigger document processing and auto-fill the form fields');
+        // AI Extraction functionality
+        document.getElementById('extractBtn').addEventListener('click', async function() {
+            const partName = document.getElementById('partName').value;
+            const partNumber = document.getElementById('partNumber').value;
+            const referenceNumber = document.getElementById('refCheck').checked;
+            const catalogFile = document.getElementById('catalogFile').files[0];
+
+            // Validation
+            if (!partName && !partNumber) {
+                alert('Please enter at least Part Name or Part Number');
+                return;
+            }
+
+            if (!catalogFile) {
+                alert('Please upload a motorcycle parts catalog PDF');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingMessage').style.display = 'block';
+            this.disabled = true;
+            this.textContent = 'Processing...';
+
+            try {
+                // Create FormData for file upload
+                const formData = new FormData();
+                formData.append('catalog', catalogFile);
+                formData.append('partName', partName);
+                formData.append('partNumber', partNumber);
+                formData.append('referenceNumber', referenceNumber);
+
+                // Call AI extraction API
+                const response = await fetch('/ai/extract-part-info', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.data.found) {
+                    // Auto-fill form fields with extracted data
+                    document.getElementById('partDescription').value = result.data.partDescription || '';
+                    document.getElementById('partImage').value = result.data.partImage || '';
+                    
+                    // Show success message with additional info
+                    let additionalInfo = '';
+                    if (result.data.additionalInfo) {
+                        const info = result.data.additionalInfo;
+                        additionalInfo = `\n\nAdditional Information:\n`;
+                        if (info.compatibility) additionalInfo += `• Compatibility: ${info.compatibility}\n`;
+                        if (info.specifications) additionalInfo += `• Specifications: ${info.specifications}\n`;
+                        if (info.price) additionalInfo += `• Price: ${info.price}\n`;
+                        if (info.category) additionalInfo += `• Category: ${info.category}\n`;
+                    }
+
+                    alert(`✅ Part information extracted successfully!\n\nConfidence: ${result.data.confidence}${additionalInfo}`);
+                    
+                } else if (result.success && !result.data.found) {
+                    alert('❌ Part not found in the catalog. Please check your part name, number, or try a different catalog.');
+                } else {
+                    alert('❌ Failed to extract part information: ' + (result.error || 'Unknown error'));
+                }
+
+            } catch (error) {
+                console.error('Extraction error:', error);
+                alert('❌ Error connecting to AI extraction service. Please try again.');
+            } finally {
+                // Hide loading and reset button
+                document.getElementById('loadingMessage').style.display = 'none';
+                this.disabled = false;
+                this.textContent = 'Obtain product info';
+            }
         });
 
         // Tab switching
