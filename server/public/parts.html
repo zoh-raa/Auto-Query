@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Machinery Singapore - Add Parts</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #333 0%, #555 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            background: #ff4757;
+            color: white;
+            padding: 8px 12px;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        .company-name {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .catalog-btn {
+            background: #ff4757;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .search-bar {
+            flex: 1;
+            max-width: 400px;
+            margin: 0 20px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .login-btn {
+            background: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-style: italic;
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            min-height: calc(100vh - 70px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: #e8e8e8;
+            padding: 20px 0;
+        }
+
+        .staff-info {
+            padding: 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .staff-icon {
+            width: 40px;
+            height: 40px;
+            background: #666;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .staff-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .menu-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background-color 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #ddd;
+        }
+
+        .menu-item.active {
+            background: #d0d0d0;
+            font-weight: bold;
+        }
+
+        .menu-icon {
+            width: 20px;
+            height: 20px;
+            background: #666;
+            border-radius: 2px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            background: white;
+        }
+
+        .content-header {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+
+        /* Form */
+        .form-container {
+            border: 1px solid #ddd;
+            padding: 30px;
+            background: white;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group.small {
+            flex: 0.3;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .form-group.large textarea {
+            height: 120px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .obtain-info-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .upload-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .upload-btn:hover {
+            background: #45a049;
+        }
+
+        /* Footer */
+        .footer {
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">AM</div>
+            <div class="company-name">AUTO MACHINERY<br>SINGAPORE PTE LTD.</div>
+        </div>
+        
+        <button class="catalog-btn">Catalog 📋</button>
+        
+        <div class="search-bar">
+            <input type="text" placeholder="Search">
+            <div class="search-icon">🔍</div>
+        </div>
+        
+        <div class="user-section">
+            <span>About Us</span>
+            <span>Delivery & Shipping</span>
+            <button class="login-btn">Login</button>
+            <div style="background: #666; padding: 8px; border-radius: 4px;">🛒</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="staff-info">
+                <div class="staff-icon">👤</div>
+                <div class="staff-name">STAFF Alice Tan</div>
+            </div>
+            
+            <div class="menu-item">
+                <div class="menu-icon"></div>
+                <span>User management</span>
+            </div>
+            
+            <div class="menu-item">
+                <div class="menu-icon"></div>
+                <span>Security logs</span>
+            </div>
+            
+            <div class="menu-item active">
+                <div class="menu-icon"></div>
+                <span>Add/edit/delete parts</span>
+            </div>
+            
+            <div class="menu-item">
+                <div class="menu-icon"></div>
+                <span>Check stock quantity</span>
+            </div>
+            
+            <div class="menu-item">
+                <div class="menu-icon"></div>
+                <span>Logout</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <div class="tab active">Add parts</div>
+                <div class="tab">Edit/Delete parts</div>
+            </div>
+
+            <div class="form-container">
+                <form id="partsForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="partName">Part Name:</label>
+                            <input type="text" id="partName" name="partName">
+                        </div>
+                        
+                        <div class="form-group small">
+                            <label for="referenceNumber">Reference Number:</label>
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="refCheck" name="refCheck">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="partNumber">Part Number:</label>
+                            <input type="text" id="partNumber" name="partNumber">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <button type="button" class="obtain-info-btn">Obtain product info</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="partDescription">Part Description:</label>
+                            <textarea id="partDescription" name="partDescription"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="partImage">Part Image/diagram:</label>
+                            <textarea id="partImage" name="partImage" class="large"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group small">
+                            <label for="productQuantity">Product quantity:</label>
+                            <input type="number" id="productQuantity" name="productQuantity" min="0">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="upload-btn">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        © AMS Motors
+    </div>
+
+    <script>
+        // Form handling
+        document.getElementById('partsForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const partData = {
+                partName: formData.get('partName'),
+                referenceNumber: document.getElementById('refCheck').checked,
+                partNumber: formData.get('partNumber'),
+                partDescription: formData.get('partDescription'),
+                partImage: formData.get('partImage'),
+                productQuantity: formData.get('productQuantity')
+            };
+            
+            console.log('Part data to submit:', partData);
+            alert('Form submitted! Check console for data.');
+        });
+
+        // Obtain product info button
+        document.querySelector('.obtain-info-btn').addEventListener('click', function() {
+            alert('AI extraction feature - This would trigger document processing and auto-fill the form fields');
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Menu item clicking
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
