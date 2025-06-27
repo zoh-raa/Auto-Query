@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path'); // Add this missing import
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -13,7 +13,7 @@ app.use(cors({
     origin: process.env.CLIENT_URL
 }));
 
-// Root route (fixes "Cannot GET /")
+// Root route
 app.get("/", (req, res) => {
     res.send(`
         <h1>Auto-Query Server</h1>
@@ -27,7 +27,7 @@ app.get("/", (req, res) => {
     `);
 });
 
-// Parts route (fixed)
+// Parts route
 app.get("/parts", (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'parts.html'));
 });
