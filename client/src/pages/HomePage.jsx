@@ -229,6 +229,16 @@ const HomePage = () => {
                                 return;
                             }
 
+                            if (reviewData.text.length < 5 ){
+                                toast.error("Review must be 5 characters.");
+                                return;
+                            }
+
+                            if (!['1','2','3','4','5'].includes(reviewData.rating)){
+                                toast.error("Rating must be 1 - 5 stars");
+                                return;
+                            }
+                            
                             try {
                                 if (editingReview) {
                                     // 🛠 UPDATE existing review
