@@ -1,6 +1,6 @@
-import React, { useContext } from 'react';
-import { Box, Typography, TextField, Button } from '@mui/material';
-import { useNavigate } from 'react-router';
+import React, { useContext, useEffect, useState } from 'react';
+import { Box, Typography, TextField, Button, CircularProgress } from '@mui/material';
+import { useNavigate } from 'react-router-dom'; // ✅
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import http from '../https';
@@ -10,7 +10,15 @@ import UserContext from '../contexts/UserContext';
 
 function Login() {
     const navigate = useNavigate();
-    const { setUser } = useContext(UserContext);
+    const { user, setUser } = useContext(UserContext);
+    const [redirecting, setRedirecting] = useState(false);
+
+    
+    useEffect(() => {
+    if (user) {
+      navigate("/customer/dashboard");
+    }
+  }, [user]);
 
     const formik = useFormik({
         initialValues: {
@@ -33,17 +41,17 @@ function Login() {
         }),
         onSubmit: async (data) => {
             console.log('🚀 Submitting login with:', data);
-            alert('Login form submitted'); // You can remove this once it works
 
             data.email = data.email.trim().toLowerCase();
             data.password = data.password.trim();
 
             try {
-                const res = await http.post('/user/login', data);
+                const res = await http.post('/customer/login', data);
                 localStorage.setItem('accessToken', res.data.accessToken);
                 setUser(res.data.user);
                 toast.success('Login successful!');
-                navigate('/');
+                setRedirecting(true); // ✅ Trigger loading spinner
+                navigate("/customer/dashboard");
             } catch (err) {
                 console.error('❌ Login error:', err);
                 toast.error(
@@ -111,7 +119,7 @@ function Login() {
                 >
                     Login
                 </Button>
-
+                {redirecting && <CircularProgress sx={{ mt: 2 }} />} {/* ✅ Spinner */}
             </Box>
 
             {/* Show Formik Validation Errors */}

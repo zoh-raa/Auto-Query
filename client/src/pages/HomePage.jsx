@@ -12,7 +12,7 @@ const HomePage = () => {
     const [showAll, setShowAll] = useState(false);
 
     useEffect(() => {
-        axios.get('http://localhost:5000/reviews')
+        axios.get('http://localhost:3001/review')
             .then(res => setReviews(res.data))
             .catch(err => {
                 console.error(err);
@@ -22,23 +22,23 @@ const HomePage = () => {
 
     const handleSubmitReview = (review) => {
         if (editingReview) {
-            axios.put(`http://localhost:5000/reviews/${editingReview.id}`, review)
+            axios.put(`http://localhost:3001/review/${editingReview.id}`, review)
                 .then(res => {
                     toast.success("Review updated!");
                     setEditingReview(null);
                     setShowForm(false);
                     // Reload reviews
-                    return axios.get('http://localhost:5000/reviews');
+                    return axios.get('http://localhost:3001/review');
                 })
                 .then(res => setReviews(res.data))
                 .catch(() => toast.error("Something went wrong. Please try again."));
         } else {
-            axios.post('http://localhost:5000/reviews', review)
+            axios.post('http://localhost:3001/review', review)
                 .then(res => {
                     toast.success("Review submitted!");
                     setShowForm(false);
                     // Reload reviews
-                    return axios.get('http://localhost:5000/reviews');
+                    return axios.get('http://localhost:3001/review');
                 })
                 .then(res => setReviews(res.data))
                 .catch(() => toast.error("Something went wrong. Please try again."));
@@ -48,11 +48,11 @@ const HomePage = () => {
 
     const handleDeleteReview = async (id) => {
         try {
-            await fetch(`http://localhost:5000/reviews/${id}`, {
+            await fetch(`http://localhost:3001/review/${id}`, {
                 method: 'DELETE'
             });
 
-            const res = await fetch('http://localhost:5000/reviews');
+            const res = await fetch('http://localhost:3001/review');
             const data = await res.json();
             setReviews(data);
         } catch (err) {
@@ -242,7 +242,7 @@ const HomePage = () => {
                             try {
                                 if (editingReview) {
                                     // 🛠 UPDATE existing review
-                                    const res = await fetch(`http://localhost:5000/reviews/${editingReview.id}`, {
+                                    const res = await fetch(`http://localhost:3001/review/${editingReview.id}`, {
                                         method: "PUT",
                                         headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify(reviewData),
@@ -253,7 +253,7 @@ const HomePage = () => {
                                     toast.success("Review updated!");
                                 } else {
                                     // ➕ CREATE new review
-                                    const res = await fetch("http://localhost:5000/reviews", {
+                                    const res = await fetch("http://localhost:3001/review", {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json" },
                                         body: JSON.stringify(reviewData),
@@ -265,7 +265,7 @@ const HomePage = () => {
                                 }
 
                                 // ✅ Refresh and reset
-                                const res = await fetch("http://localhost:5000/reviews");
+                                const res = await fetch("http://localhost:3001/review");
                                 const data = await res.json();
                                 setReviews(data);
                                 setShowForm(false);

@@ -45,7 +45,7 @@ function Register() {
             data.password = data.password.trim();
 
             try {
-                const res = await http.post('/user/register', data);
+                const res = await http.post('/customer/register', data);
                 console.log('✅ Register response:', res.data);
                 toast.success('Registration successful!');
                 navigate('/login');

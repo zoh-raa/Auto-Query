@@ -6,15 +6,19 @@ import { ThemeProvider } from '@mui/material/styles';
 import MyTheme from './themes/MyTheme';
 import { Toaster } from 'react-hot-toast'; // ✅ Import toaster
 import Register from './pages/Register';
+import RegisterStaff from './pages/RegisterStaff';
 import Login from './pages/Login';
+import StaffLogin from './pages/StaffLogin';
 import { UserProvider } from './contexts/UserContext';
 import HomePage from './pages/HomePage'; // ✅ Correct
+import CustomerDashboard from "./pages/CustomerDashboard"; 
+import StaffDashboard from './pages/StaffDashboard';
 
 
 function App() {
   return (
-    <UserProvider>
       <Router>
+        <UserProvider>
         <ThemeProvider theme={MyTheme}>
           <MyAppBar />
           <Toaster position="top-right" /> {/* ✅ Add toaster here */}
@@ -22,12 +26,16 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/register-staff" element={<RegisterStaff />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/staff/login" element={<StaffLogin />} />
+              <Route path="/customer/dashboard" element={<CustomerDashboard />} />
+              <Route path="/staff/dashboard" element={<StaffDashboard />} />
             </Routes>
           </Container>
         </ThemeProvider>
+        </UserProvider>
       </Router>
-    </UserProvider>
   );
 }
 

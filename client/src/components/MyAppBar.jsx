@@ -1,10 +1,12 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import UserContext from "../contexts/UserContext";
 import { AppBar, Toolbar, Typography, Box, Button, InputBase } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom'; // ✅ Fixed import
 import SearchIcon from '@mui/icons-material/Search';
 import { styled, alpha } from '@mui/material/styles';
 import '../App.css';
+import SlideAuthPanel from './SlideAuthPanel'; // Import the panel
+
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -44,6 +46,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 function MyAppBar() {
   const { user, setUser } = useContext(UserContext);
   const navigate = useNavigate();
+  const [authOpen, setAuthOpen] = useState(false);
 
   const logout = () => {
     localStorage.clear();
@@ -89,7 +92,12 @@ function MyAppBar() {
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           {user ? (
             <>
-              <Typography>{user.name}</Typography>
+              <Link to="/customer/dashboard" style={{ textDecoration: "none", color: "white" }}>
+  <Typography sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+    {user.name}
+  </Typography>
+</Link>
+
               <Button color="inherit" onClick={logout}>Logout</Button>
             </>
           ) : (
@@ -98,26 +106,16 @@ function MyAppBar() {
                 <Button
                   variant="outlined"
                   sx={{ color: "white", borderColor: "white" }}
-                  component={Link}
-                  to="/register"
+                  onClick={() => setAuthOpen(true)}
                 >
-                  Register
+                  Login / Register
                 </Button>
-                <Button
-                  variant="outlined"
-                  sx={{ color: "white", borderColor: "white" }}
-                  component={Link}
-                  to="/login"
-                >
-                  Login
-                </Button>
-
               </Box>
-
             </>
           )}
         </Box>
       </Toolbar>
+      <SlideAuthPanel open={authOpen} onClose={() => setAuthOpen(false)} />  {/* Add here */}
     </AppBar>
   );
 }

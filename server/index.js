@@ -9,7 +9,8 @@ app.use(express.static('public'));
 
 // Enable CORS
 app.use(cors({
-    origin: process.env.CLIENT_URL // or use "*" for public access during development
+    origin: process.env.CLIENT_URL, // 'http://localhost:3000'
+    credentials: true // ✅ allow credentials
 }));
 
 // Simple Route
@@ -18,16 +19,15 @@ app.get("/", (req, res) => {
 });
 
 // Load Routes
-const tutorialRoute = require('./routes/tutorial');
-const userRoute = require('./routes/user');
+const customerRoute = require('./routes/customer');
 const fileRoute = require('./routes/file');
-const reviewRoute = require('./routes/review.route'); // ✅ New line
+const reviewRoute = require('./routes/review'); // ✅ New line
+const staffRoute = require('./routes/staff');
 
-app.use("/tutorial", tutorialRoute);
-app.use("/user", userRoute);
+app.use("/customer", customerRoute);
 app.use("/file", fileRoute);
 app.use("/review", reviewRoute); // ✅ New line
-app.use("/reviews", reviewRoute);
+app.use("/staff", staffRoute);
 
 
 
@@ -35,7 +35,7 @@ app.use("/reviews", reviewRoute);
 const db = require('./models');
 db.sequelize.sync({ alter: true })
     .then(() => {
-        let port = process.env.APP_PORT || 5000;
+        let port = process.env.APP_PORT || 3001;
         app.listen(port, () => {
             console.log(`⚡ Server running on http://localhost:${port}`);
         });
