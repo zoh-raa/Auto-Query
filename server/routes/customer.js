@@ -6,6 +6,7 @@ const yup = require("yup");
 const { sign } = require('jsonwebtoken');
 const { validateToken } = require('../middlewares/auth');
 require('dotenv').config();
+const { LoginAttempt } = require('../models');
 
 // POST /customer/register
 router.post("/register", async (req, res) => {
@@ -38,7 +39,6 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// POST /customer/login
 router.post("/login", async (req, res) => {
   let data = req.body;
 
@@ -59,6 +59,21 @@ router.post("/login", async (req, res) => {
 
     await Customer.increment('login_count', { where: { id: customer.id } });
 
+    // ✅ LOG LOGIN ATTEMPT
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const location = "Unknown"; // Optional: add IP geolocation
+    const device = req.headers['user-agent'] || "Unknown";
+    const anomaly_score = "Low"; // Optional: implement scoring later
+
+    await LoginAttempt.create({
+      email: customer.email,
+      ip,
+      location,
+      device,
+      anomaly_score
+    });
+
+    // ✅ Continue login flow
     const userInfo = {
       id: customer.id,
       email: customer.email,
@@ -75,6 +90,7 @@ router.post("/login", async (req, res) => {
     res.status(400).json({ errors: err.errors || [err.message] });
   }
 });
+
 
 // ✅ Add this route for /customer/auth
 router.get("/auth", validateToken, (req, res) => {

@@ -28,7 +28,7 @@ import ListAltIcon from '@mui/icons-material/ListAlt';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { useContext } from 'react';
 import UserContext from '../contexts/UserContext'; // ✅ import if not already
-
+import StaffSidebar from '../components/StaffSidebar'; // add this at the top
 
 
 const StaffDashboard = () => {
@@ -49,6 +49,20 @@ useEffect(() => {
     .catch((err) => {
       console.error("❌ Failed to fetch customers:", err?.response?.data || err.message);
       navigate('/login');
+    });
+}, []);
+
+  const [securityLogs, setSecurityLogs] = useState([]);
+
+  useEffect(() => {
+  axios.get('http://localhost:3001/staff/security-logs', {
+    headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
+  })
+    .then(res => {
+      setSecurityLogs(res.data);
+    })
+    .catch(err => {
+      console.error("❌ Failed to fetch security logs:", err?.response?.data || err.message);
     });
 }, []);
 
@@ -78,18 +92,7 @@ useEffect(() => {
   return (
     <Box display="flex" minHeight="100vh">
     {/* Sidebar remains unchanged */}
-    <Box width="260px" bgcolor="#f4f4f4" p={3}>
-      <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-  STAFF {user?.name || 'Unknown'}
-</Typography>
-      <Stack spacing={1}>
-        <Button fullWidth startIcon={<PersonOutlineIcon />} variant="contained" color="inherit">User management</Button>
-        <Button fullWidth startIcon={<SecurityIcon />} variant="outlined">Security logs</Button>
-        <Button fullWidth startIcon={<InventoryIcon />} variant="outlined">Add/edit/delete parts</Button>
-        <Button fullWidth startIcon={<ListAltIcon />} variant="outlined">Check stock quantity</Button>
-        <Button fullWidth startIcon={<ExitToAppIcon />} color="error">Logout</Button>
-      </Stack>
-    </Box>
+    <StaffSidebar />
 
     {/* Main Panel */}
     <Box flexGrow={1} p={4} bgcolor="#f2f4f7">
@@ -162,6 +165,7 @@ useEffect(() => {
     {insight || "Click 'Generate Insight' to analyse engagement data."}
   </Paper>
 </Box>
+
 
     </Box>
   </Box>

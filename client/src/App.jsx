@@ -13,7 +13,7 @@ import { UserProvider } from './contexts/UserContext';
 import HomePage from './pages/HomePage'; // ✅ Correct
 import CustomerDashboard from "./pages/CustomerDashboard"; 
 import StaffDashboard from './pages/StaffDashboard';
-
+import SecurityLogs from './pages/SecurityLogs'; // 👈 import it
 
 function App() {
   return (
@@ -31,6 +31,7 @@ function App() {
               <Route path="/staff/login" element={<StaffLogin />} />
               <Route path="/customer/dashboard" element={<CustomerDashboard />} />
               <Route path="/staff/dashboard" element={<StaffDashboard />} />
+              <Route path="/staff/security-logs" element={<SecurityLogs />} /> {/* ✅ Add this */}
             </Routes>
           </Container>
         </ThemeProvider>

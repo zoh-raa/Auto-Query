@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { validateToken } = require('../middlewares/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { LoginAttempt } = require('../models');
 require('dotenv').config();
 
 router.post('/register', async (req, res) => {
@@ -63,12 +64,28 @@ router.post('/login', async (req, res) => {
   const { staff_id, password } = req.body;
 
   try {
-    const staff = await Staff.findOne({ where: { staff_id } }); // 👈 MATCH by staff_id
+    const staff = await Staff.findOne({ where: { staff_id } });
     if (!staff) return res.status(400).json({ message: "Staff not found" });
 
     const match = await bcrypt.compare(password, staff.password);
     if (!match) return res.status(400).json({ message: "Incorrect password" });
 
+    // 🔽 Basic info from request
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const location = "Unknown"; // TODO: Replace with IP lookup API
+    const device = req.headers['user-agent'] || "Unknown";
+    const anomaly_score = "Low"; // TODO: Later replace with real logic
+
+    // ✅ Create LoginAttempt record
+    await LoginAttempt.create({
+      email: staff.email,
+      ip,
+      location,
+      device,
+      anomaly_score
+    });
+
+    // ✅ Return response
     const token = jwt.sign(
       { id: staff.id, role: 'staff' },
       process.env.APP_SECRET,
@@ -90,6 +107,7 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 router.get('/auth', validateToken, async (req, res) => {
   try {
@@ -161,6 +179,18 @@ router.post('/generate-insight', async (req, res) => {
   }
 });
 
-
+// GET /staff/security-logs
+router.get("/security-logs", async (req, res) => {
+  try {
+    const logs = await LoginAttempt.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 50
+    });
+    res.json(logs);
+  } catch (err) {
+    console.error("❌ Failed to fetch security logs:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 module.exports = router;

@@ -43,3 +43,6 @@ db.sequelize.sync({ alter: true })
     .catch((err) => {
         console.log(err);
     });
+    
+const staffRoutes = require('./routes/staff');
+app.use('/staff', staffRoutes);
