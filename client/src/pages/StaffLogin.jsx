@@ -6,9 +6,13 @@ import * as yup from 'yup';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import UserContext from '../contexts/UserContext'; // ✅ add this
+import { useContext } from 'react';                // ✅ add this
 
 function StaffLogin() {
   const navigate = useNavigate();
+  const { setUser } = useContext(UserContext);       // ✅ add this inside StaffLogin()
+
 
   const formik = useFormik({
     initialValues: {
@@ -20,25 +24,36 @@ function StaffLogin() {
       password: yup.string().required('Password is required')
     }),
     onSubmit: async (data) => {
-      try {
-        const payload = {
-          staff_id: data.staff_id.trim(),
-          password: data.password.trim()
-        };
+  try {
+    const payload = {
+      staff_id: data.staff_id.trim(),
+      password: data.password.trim()
+    };
 
-        const res = await axios.post('http://localhost:3001/staff/login', payload);
-        toast.success('Login successful!');
-        localStorage.setItem("accessToken", res.data.accessToken);
-        navigate('/staff/dashboard');
+    const res = await axios.post('http://localhost:3001/staff/login', payload);
 
-      } catch (err) {
-        console.error('❌ Staff login error:', err);
-        toast.error(
-          err?.response?.data?.message ||
-          'Login failed. Please check your credentials.'
-        );
-      }
-    }
+    // ✅ Assume res.data.user contains staff name and email
+    const staffUser = {
+      name: res.data.user.name || "Staff",      // Adjust based on your backend response
+      email: res.data.user.email,
+      role: "staff"
+    };
+
+    setUser(staffUser);
+    localStorage.setItem("user", JSON.stringify(staffUser));
+    localStorage.setItem("accessToken", res.data.accessToken);
+
+    toast.success('Login successful!');
+    navigate('/staff/dashboard');
+
+  } catch (err) {
+    console.error('❌ Staff login error:', err);
+    toast.error(
+      err?.response?.data?.message || 'Login failed. Please check your credentials.'
+    );
+  }
+}
+
   });
 
   return (

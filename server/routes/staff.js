@@ -7,6 +7,7 @@ const { validateToken } = require('../middlewares/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { LoginAttempt } = require('../models');
 require('dotenv').config();
+const axios = require('axios'); // ✅ Import this if not already
 
 router.post('/register', async (req, res) => {
   const { staff_id, email, password, name, role } = req.body;
@@ -70,20 +71,29 @@ router.post('/login', async (req, res) => {
     const match = await bcrypt.compare(password, staff.password);
     if (!match) return res.status(400).json({ message: "Incorrect password" });
 
-    // 🔽 Basic info from request
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const location = "Unknown"; // TODO: Replace with IP lookup API
-    const device = req.headers['user-agent'] || "Unknown";
-    const anomaly_score = "Low"; // TODO: Later replace with real logic
+    // ✅ Get IP and Geo info using ipapi.co
+    let ip = "Unknown";
+    let location = "Unknown";
 
-    // ✅ Create LoginAttempt record
+    try {
+      const geoRes = await axios.get("https://ipapi.co/json/");
+      ip = geoRes.data.ip;
+      location = `${geoRes.data.city}, ${geoRes.data.region}, ${geoRes.data.country_name}`;
+    } catch (geoErr) {
+      console.warn("🌐 IPAPI lookup failed:", geoErr.message);
+    }
+
+    const device = req.headers['user-agent'] || "Unknown";
+
+    // ✅ Log attempt
     await LoginAttempt.create({
       email: staff.email,
       ip,
       location,
       device,
-      anomaly_score
+      anomaly_score: "Low"
     });
+
 
     // ✅ Return response
     const token = jwt.sign(

@@ -7,6 +7,7 @@ const { sign } = require('jsonwebtoken');
 const { validateToken } = require('../middlewares/auth');
 require('dotenv').config();
 const { LoginAttempt } = require('../models');
+const axios = require('axios'); // if not already
 
 // POST /customer/register
 router.post("/register", async (req, res) => {
@@ -59,19 +60,25 @@ router.post("/login", async (req, res) => {
 
     await Customer.increment('login_count', { where: { id: customer.id } });
 
-    // ✅ LOG LOGIN ATTEMPT
-    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    const location = "Unknown"; // Optional: add IP geolocation
+    let location = "Unknown";
+    let ip = "Unknown";
+    try {
+      const geoRes = await axios.get("https://ipapi.co/json/");
+      ip = geoRes.data.ip;
+      location = `${geoRes.data.city}, ${geoRes.data.region}, ${geoRes.data.country_name}`;
+    } catch (geoErr) {
+      console.warn("🌐 IPAPI lookup failed:", geoErr.message);
+    }
     const device = req.headers['user-agent'] || "Unknown";
-    const anomaly_score = "Low"; // Optional: implement scoring later
 
     await LoginAttempt.create({
       email: customer.email,
       ip,
       location,
       device,
-      anomaly_score
+      anomaly_score: "Low"
     });
+
 
     // ✅ Continue login flow
     const userInfo = {

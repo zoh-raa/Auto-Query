@@ -12,21 +12,25 @@ export const UserProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    const role = localStorage.getItem("role") || "customer";
+    const storedUser = JSON.parse(localStorage.getItem("user"));
 
-    if (!token) return;
+    if (!token || !storedUser) return;
 
-    const endpoint = role === "staff" ? "/staff/auth" : "/customer/auth";
+    const endpoint = storedUser.role === "staff" ? "/staff/auth" : "/customer/auth";
 
     http.get(endpoint, {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then((res) => setUser({ ...res.data.user, role }))
+      .then((res) => {
+        setUser({ ...res.data.user, role: storedUser.role });
+      })
       .catch(() => {
         localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
         setUser(null);
       });
   }, []);
+
 
   return (
     <UserContext.Provider value={{ user, setUser }}>

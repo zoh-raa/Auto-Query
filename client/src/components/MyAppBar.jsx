@@ -92,11 +92,15 @@ function MyAppBar() {
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           {user ? (
             <>
-              <Link to="/customer/dashboard" style={{ textDecoration: "none", color: "white" }}>
+              <Link
+  to={user.role === 'staff' ? "/staff/dashboard" : "/customer/dashboard"}
+  style={{ textDecoration: "none", color: "white" }}
+>
   <Typography sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
-    {user.name}
+    {user.name || "User"}
   </Typography>
 </Link>
+
 
               <Button color="inherit" onClick={logout}>Logout</Button>
             </>
