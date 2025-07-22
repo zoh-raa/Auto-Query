@@ -38,6 +38,10 @@ app.use('/api/delivery', deliveryRoutes);
 const chatbotRoutes = require('./routes/chatbot');
 app.use('/api/chatbot', chatbotRoutes);
 
+// Add this for RFQ API:
+const rfqRoutes = require('./routes/rfq');
+app.use('/api/rfq', rfqRoutes);
+
 // Basic root route to verify server is running
 app.get("/", (req, res) => {
   res.send("Welcome to the learning space.");
@@ -51,7 +55,8 @@ const port = process.env.APP_PORT || 3001;
 
 // Sync Sequelize models with the database
 // { alter: true } updates the tables to match models without dropping them
-db.sequelize.sync({ alter: true })
+// Sync Sequelize models with the database
+db.sequelize.sync({ force: true })
   .then(() => {
     // Start the Express server after successful database sync
     app.listen(port, () => {

@@ -42,7 +42,7 @@ router.get("/", async (req, res) => {
         include: { 
             model: User, 
             as: "user", 
-            attributes: ['firstName', 'lastName', 'email'] // FIXED here
+            attributes: ['name', 'email'] // FIXED here
         }
     });
     res.json(list);
@@ -54,7 +54,7 @@ router.get("/:id", async (req, res) => {
         include: { 
             model: User, 
             as: "user", 
-            attributes: ['firstName', 'lastName', 'email'] // FIXED here
+            attributes: ['name', 'email'] // FIXED here
         }
     });
     // Check id not found
