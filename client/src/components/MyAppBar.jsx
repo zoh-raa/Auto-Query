@@ -3,6 +3,7 @@ import UserContext from "../contexts/UserContext";
 import { AppBar, Toolbar, Typography, Box, Button, InputBase } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom'; // ✅ Fixed import
 import SearchIcon from '@mui/icons-material/Search';
+import InventoryIcon from '@mui/icons-material/Inventory';
 import { styled, alpha } from '@mui/material/styles';
 import '../App.css';
 import SlideAuthPanel from './SlideAuthPanel'; // Import the panel
@@ -64,16 +65,39 @@ function MyAppBar() {
     }
   };
 
+  const handleCatalogClick = () => {
+    navigate("/product");
+  };
+
   return (
     <AppBar position="static" sx={{ backgroundColor: "#4f4f4f" }}>
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        {/* Left Section: Logo + Brand + Home */}
+        {/* Left Section: Logo + Brand + Home + Catalog */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <img src="/images/logo.png" alt="Logo" style={{ height: 40 }} />
           <Typography variant="h6" fontWeight="bold">Auto Machinery</Typography>
           <Link to="/" style={{ textDecoration: "none", color: "white" }}>
             <Typography>Home</Typography>
           </Link>
+          <Button 
+            onClick={handleCatalogClick}
+            variant="contained"
+            startIcon={<InventoryIcon />}
+            sx={{ 
+              backgroundColor: "#ff7a7a",
+              color: "black",
+              textTransform: "capitalize",
+              borderRadius: "20px",
+              fontWeight: "bold",
+              paddingX: 2,
+              paddingY: 1,
+              '&:hover': { 
+                backgroundColor: "#ff6b6b"
+              }
+            }}
+          >
+            Catalog
+          </Button>
         </Box>
 
         {/* Middle: Search */}

@@ -14,6 +14,8 @@ import HomePage from './pages/HomePage'; // ✅ Correct
 import CustomerDashboard from "./pages/CustomerDashboard"; 
 import StaffDashboard from './pages/StaffDashboard';
 import SecurityLogs from './pages/SecurityLogs'; // 👈 import it
+import CreateProductPage from './pages/CreateProductPage'; // 👈 import it
+import ProductPage from './pages/ProductPage';
 
 function App() {
   return (
@@ -32,6 +34,8 @@ function App() {
               <Route path="/customer/dashboard" element={<CustomerDashboard />} />
               <Route path="/staff/dashboard" element={<StaffDashboard />} />
               <Route path="/staff/security-logs" element={<SecurityLogs />} /> {/* ✅ Add this */}
+              <Route path="/staff/create-product" element={<CreateProductPage />} /> {/* 👈 Add this */}
+              <Route path="/product" element={<ProductPage />} />
             </Routes>
           </Container>
         </ThemeProvider>

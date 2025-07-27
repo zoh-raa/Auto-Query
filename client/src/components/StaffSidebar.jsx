@@ -7,6 +7,8 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import UserContext from '../contexts/UserContext';
+import { Link } from 'react-router-dom';
+import AddBoxIcon from '@mui/icons-material/AddBox';
 
 const StaffSidebar = () => {
   const { user, setUser } = useContext(UserContext);
@@ -48,8 +50,9 @@ const StaffSidebar = () => {
         <Button
           fullWidth
           startIcon={<InventoryIcon />}
-          variant="outlined"
+          variant={isActive('/staff/create-product') ? 'contained' : 'outlined'}
           color="inherit"
+          onClick={() => navigate('/staff/create-product')}
         >
           Add/edit/delete parts
         </Button>
