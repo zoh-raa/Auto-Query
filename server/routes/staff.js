@@ -8,6 +8,8 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { LoginAttempt } = require('../models');
 require('dotenv').config();
 const axios = require('axios'); // ✅ Import this if not already
+const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
+
 
 router.post('/register', async (req, res) => {
   const { staff_id, email, password, name, role } = req.body;
@@ -145,7 +147,7 @@ router.get('/customers', validateToken, async (req, res) => {
   try {
     console.log("✅ /staff/customers called by", req.user?.id);
     const customers = await Customer.findAll({
-      attributes: ['id', 'email', 'login_count']
+      attributes: ['id','name','email', 'login_count']
     });
     console.log("✅ Customers retrieved:", customers.length);
     res.json(customers);
@@ -188,6 +190,58 @@ router.post('/generate-insight', async (req, res) => {
     res.status(500).json({ message: "Insight generation failed." });
   }
 });
+
+const bedrockClient = new BedrockRuntimeClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  }
+});
+
+router.post('/inactivity-likelihood', async (req, res) => {
+  const { email, login_count } = req.body;
+
+  const prompt = `Estimate the likelihood (as a % from 0 to 100) that a user is becoming inactive based on this info:
+- Email: ${email}
+- Login count: ${login_count}
+
+Return only a number (no explanation).`;
+
+  const input = {
+    modelId: "anthropic.claude-3-haiku-20240307-v1:0",
+    contentType: "application/json",
+    accept: "application/json",
+    body: JSON.stringify({
+      anthropic_version: "bedrock-2023-05-31", // ✅ REQUIRED
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 20,
+      temperature: 0.2
+    })
+  };
+
+  try {
+    const command = new InvokeModelCommand(input);
+    const response = await bedrockClient.send(command);
+
+    const raw = await response.body.transformToString();
+    const match = raw.match(/\d+/);
+    const likelihood = match ? parseInt(match[0]) : 50;
+
+    res.json({ likelihood });
+  } catch (err) {
+    console.error("❌ Bedrock SDK error:", err?.message || err);
+    res.status(500).json({ message: "SDK-based Bedrock call failed." });
+  }
+});
+
+
+
 
 // GET /staff/security-logs
 router.get("/security-logs", async (req, res) => {

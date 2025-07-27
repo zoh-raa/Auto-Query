@@ -98,6 +98,44 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.get('/login-history/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Step 1: Get customer record (from Customer table)
+    const customer = await Customer.findByPk(id, {
+      attributes: ['id', 'email', 'login_count']
+    });
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    // Step 2: Get login attempts (from LoginAttempt table) using email
+    const logins = await LoginAttempt.findAll({
+      where: { email: customer.email },
+      attributes: ['timestamp']
+    });
+
+    // Step 3: Count logins by month
+    const monthlyCounts = Array(12).fill(0);
+    logins.forEach(({ timestamp }) => {
+      const month = new Date(timestamp).getMonth(); // 0 = Jan
+      monthlyCounts[month]++;
+    });
+
+    // Step 4: Respond with both login_count and monthly login history
+    res.json({
+      login_count: customer.login_count,
+      monthly_logins: monthlyCounts
+    });
+  } catch (err) {
+    console.error('Login history error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 
 // ✅ Add this route for /customer/auth
 router.get("/auth", validateToken, (req, res) => {
