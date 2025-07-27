@@ -13,7 +13,15 @@ const ProductPage = () => {
       },
     })
       .then(res => res.json())
-      .then(data => setParts(data))
+      .then(data => {
+        if (Array.isArray(data)) {
+          setParts(data);
+        } else {
+          console.error('Invalid response from server:', data);
+          setParts([]);
+        }
+      })
+
       .catch(() => setParts([]));
   }, []);
 
@@ -24,7 +32,7 @@ const ProductPage = () => {
   return (
     <Box p={4} minHeight="100vh" bgcolor="#f9f9f9">
       <Typography variant="h4" gutterBottom align="center">
-        Product Details
+        Parts Catalog
       </Typography>
 
       {parts.length === 0 ? (
@@ -57,12 +65,6 @@ const ProductPage = () => {
           ))}
         </Grid>
       )}
-
-      <Box mt={4} display="flex" justifyContent="center">
-        <Button variant="contained" onClick={handleBackToHome}>
-          Back to Home
-        </Button>
-      </Box>
     </Box>
   );
 };

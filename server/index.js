@@ -1,6 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize('mydb', 'root', 'password', {
+  host: 'localhost',
+  dialect: 'mysql'
+});
 
 const app = express();
 app.use(express.json());
@@ -34,7 +39,7 @@ app.use("/customer", customerRoute);
 app.use("/file", fileRoute);
 app.use("/review", reviewRoute); // ✅ New line
 app.use("/staff", staffRoute);
-
+app.use("/staff/products", productRoute);
 
 
 // Database sync & server start
@@ -50,4 +55,5 @@ db.sequelize.sync({ alter: true })
         console.log(err);
     });
     
-
+const staffRoutes = require('./routes/staff');    
+app.use('/staff', staffRoutes);

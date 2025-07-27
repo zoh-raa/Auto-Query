@@ -1,7 +1,7 @@
 // CreateProductPage.jsx
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Button, TextField, Typography, Paper, Stack, Tabs, Tab
+  Box, Button, TextField, Typography, Paper, Stack, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import StaffSidebar from '../components/StaffSidebar';
 
@@ -16,6 +16,7 @@ const CreateProductPage = () => {
     quantity: ''
   });
   const [parts, setParts] = useState([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Fetch all parts when Edit/Delete tab is active or after creation
   useEffect(() => {
@@ -39,8 +40,14 @@ const CreateProductPage = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  // Show confirmation dialog instead of uploading immediately
+  const handlePreSubmit = (e) => {
     e.preventDefault();
+    setConfirmOpen(true);
+  };
+
+  // Actually upload after confirmation
+  const handleSubmit = () => {
     const data = new FormData();
     for (const key in formData) {
       data.append(key, formData[key]);
@@ -63,9 +70,13 @@ const CreateProductPage = () => {
           image: null,
           quantity: ''
         });
-        fetchParts(); // Refresh parts list after creation
+        setConfirmOpen(false);
+        fetchParts();
       })
-      .catch(err => alert('Failed to create product'));
+      .catch(err => {
+        alert('Failed to create product');
+        setConfirmOpen(false);
+      });
   };
 
   // Edit/Delete Parts Tab
@@ -82,7 +93,38 @@ const CreateProductPage = () => {
               <Typography variant="body2">Ref: {part.productId} | Number: {part.productNumber}</Typography>
               <Typography variant="body2">Qty: {part.quantity}</Typography>
               <Typography variant="body2">{part.productDescription}</Typography>
-              {/* Add edit/delete buttons here if needed */}
+              <Box mt={2} display="flex" gap={1}>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                onClick={() => {
+                  // Set form data and switch to Add Parts tab
+                  setFormData({
+                    productName: part.productName,
+                    productId: part.productId,
+                    productNumber: part.productNumber,
+                    productDescription: part.productDescription,
+                    image: null, // image editing not supported here
+                    quantity: part.quantity
+                  });
+                  setTab(0);
+                }}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={() => {
+                  // TODO: Implement delete logic
+                  alert(`Delete part: ${part.productName}`);
+                }}
+              >
+                Delete
+              </Button>
+            </Box>
             </Paper>
           ))}
         </Box>
@@ -114,7 +156,7 @@ const CreateProductPage = () => {
             <Tab label="Edit/Delete parts" sx={{ fontWeight: 100, fontSize: 15 }} />
           </Tabs>
           {tab === 0 && (
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handlePreSubmit}>
               <Stack spacing={3}>
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
                   <Box flex={1}>
@@ -125,6 +167,7 @@ const CreateProductPage = () => {
                       name="productName"
                       fullWidth
                       onChange={handleChange}
+                      value={formData.productName}
                       required
                     />
                   </Box>
@@ -153,6 +196,7 @@ const CreateProductPage = () => {
                       name="productNumber"
                       fullWidth
                       onChange={handleChange}
+                      value={formData.productNumber}
                       required
                     />
                   </Box>
@@ -170,6 +214,7 @@ const CreateProductPage = () => {
                     rows={4}
                     fullWidth
                     onChange={handleChange}
+                    value={formData.productDescription}
                     required
                   />
                 </Box>
@@ -232,6 +277,22 @@ const CreateProductPage = () => {
           {tab === 1 && <EditDeleteParts />}
         </Paper>
       </Box>
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Confirm Part Details</DialogTitle>
+        <DialogContent dividers>
+          <Typography><b>Part Name:</b> {formData.productName}</Typography>
+          <Typography><b>Reference Number:</b> {formData.productId}</Typography>
+          <Typography><b>Catalog Part Number:</b> {formData.productNumber}</Typography>
+          <Typography><b>Description:</b> {formData.productDescription}</Typography>
+          <Typography><b>Quantity:</b> {formData.quantity}</Typography>
+          <Typography><b>Image:</b> {formData.image && formData.image.name ? formData.image.name : 'No file selected'}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={handleSubmit} variant="contained" color="success">Confirm & Upload</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -43,6 +43,8 @@ function App() {
               <Route path="/customer/dashboard" element={<CustomerDashboard />} />
               <Route path="/staff/dashboard" element={<StaffDashboard />} />
               <Route path="/staff/security-logs" element={<SecurityLogs />} /> {/* ✅ Add this */}
+              <Route path="/staff/create-product" element={<CreateProductPage />} />
+              <Route path="/product" element={<ProductPage />} />
             </Routes>
           </Container>
       </ThemeProvider>
