@@ -45,3 +45,4 @@ This is the React client for the Learning App, built with [Vite](https://vitejs.
 - Formik & Yup
 - Day.js
 - React Toastify
+- npm install qrcode

@@ -1,12 +1,12 @@
 import React, { useContext, useState } from "react";
 import UserContext from "../contexts/UserContext";
 import { AppBar, Toolbar, Typography, Box, Button, InputBase } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom'; // ✅ Fixed import
+import { Link, useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import { styled, alpha } from '@mui/material/styles';
 import '../App.css';
-import SlideAuthPanel from './SlideAuthPanel'; // Import the panel
-
+import SlideAuthPanel from './SlideAuthPanel';
+import CartIcon from './CartIcon';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -93,33 +93,38 @@ function MyAppBar() {
           {user ? (
             <>
               <Link
-  to={user.role === 'staff' ? "/staff/dashboard" : "/customer/dashboard"}
-  style={{ textDecoration: "none", color: "white" }}
->
-  <Typography sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
-    {user.name || "User"}
-  </Typography>
-</Link>
+                to={user.role === 'staff' ? "/staff/dashboard" : "/customer/dashboard"}
+                style={{ textDecoration: "none", color: "white" }}
+              >
+                <Typography sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+                  {user.name || "User"}
+                </Typography>
+              </Link>
 
+              {/* 👇 NEW BUTTON FOR RFQ FORM */}
+              <Button component={Link} to="/rfq-form" state={{ fromNavbar: true }}>
+                Create RFQ
+              </Button>
 
               <Button color="inherit" onClick={logout}>Logout</Button>
             </>
           ) : (
-            <>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  sx={{ color: "white", borderColor: "white" }}
-                  onClick={() => setAuthOpen(true)}
-                >
-                  Login / Register
-                </Button>
-              </Box>
-            </>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                sx={{ color: "white", borderColor: "white" }}
+                onClick={() => setAuthOpen(true)}
+              >
+                Login / Register
+              </Button>
+            </Box>
           )}
         </Box>
+
+        <CartIcon />
       </Toolbar>
-      <SlideAuthPanel open={authOpen} onClose={() => setAuthOpen(false)} />  {/* Add here */}
+
+      <SlideAuthPanel open={authOpen} onClose={() => setAuthOpen(false)} />
     </AppBar>
   );
 }

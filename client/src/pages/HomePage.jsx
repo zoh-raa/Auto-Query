@@ -3,6 +3,7 @@ import ReviewForm from '../components/ReviewForm';
 import UserContext from '../contexts/UserContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { CartContext } from '../contexts/CartContext';
 
 const HomePage = () => {
     const { user } = useContext(UserContext);
@@ -10,6 +11,7 @@ const HomePage = () => {
     const [showForm, setShowForm] = useState(false);
     const [editingReview, setEditingReview] = useState(null);
     const [showAll, setShowAll] = useState(false);
+    const { addToCart } = useContext(CartContext);
 
     useEffect(() => {
         axios.get('http://localhost:3001/review')
@@ -44,7 +46,6 @@ const HomePage = () => {
                 .catch(() => toast.error("Something went wrong. Please try again."));
         }
     };
-
 
     const handleDeleteReview = async (id) => {
         try {
@@ -103,7 +104,16 @@ const HomePage = () => {
                 </div>
                 <div className="cart-summary">
                     <span>Total $150</span>
-                    <button>Add All to Cart</button>
+                    <button
+                        onClick={() => {
+                            addToCart({ productId: 1, name: "Yamaha BYSON Exhaust", quantity: 1, remarks: "" });
+                            addToCart({ productId: 2, name: "RACING Honda CBR500R Tail Tidy", quantity: 1, remarks: "" });
+                            addToCart({ productId: 3, name: "Yamaha Aerox GDR155 Oil Pump", quantity: 1, remarks: "" });
+                            toast.success("All frequently bought parts added to cart!");
+                        }}
+                    >
+                        Add All to Cart
+                    </button>
                 </div>
             </div>
 
@@ -121,7 +131,14 @@ const HomePage = () => {
                             <div className="bundle-item"><img src="/images/part7.jpeg" alt="Part D" /><p>Spark Plug</p></div>
                         </div>
                         <p className="bundle-price">$300 Bundle</p>
-                        <button>Add Bundle to Cart</button>
+                        <button
+                            onClick={() => {
+                                addToCart({ productId: 101, name: "YAMAHA Aerox 50 Service Bundle", quantity: 1, remarks: "" });
+                                toast.success("YAMAHA bundle added to cart!");
+                            }}
+                        >
+                            Add Bundle to Cart
+                        </button>
                     </div>
 
                     <div className="bundle-card">
@@ -134,7 +151,14 @@ const HomePage = () => {
                             <div className="bundle-item"><img src="/images/part11.jpeg" alt="Part H" /><p>Air Filter</p></div>
                         </div>
                         <p className="bundle-price">$275 Bundle</p>
-                        <button>Add Bundle to Cart</button>
+                        <button
+                            onClick={() => {
+                                addToCart({ productId: 102, name: "HONDA Touring Essentials Bundle", quantity: 1, remarks: "" });
+                                toast.success("HONDA bundle added to cart!");
+                            }}
+                        >
+                            Add Bundle to Cart
+                        </button>
                     </div>
                 </div>
             </div>
