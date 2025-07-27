@@ -26,13 +26,14 @@ const customerRoute = require('./routes/customer');
 const fileRoute = require('./routes/file');
 const reviewRoute = require('./routes/review'); // ✅ New line
 const staffRoute = require('./routes/staff');
+const rfqRoute = require('./routes/rfq');
+const cartRoutes = require('./routes/cart');
 const productRoute = require('./routes/products'); // im gonna crashout if upload dont work
 
 app.use("/customer", customerRoute);
 app.use("/file", fileRoute);
 app.use("/review", reviewRoute); // ✅ New line
 app.use("/staff", staffRoute);
-app.use("/staff/products", productRoute); 
 
 
 
@@ -49,5 +50,4 @@ db.sequelize.sync({ alter: true })
         console.log(err);
     });
     
-const staffRoutes = require('./routes/staff');
-app.use('/staff', staffRoutes);
+

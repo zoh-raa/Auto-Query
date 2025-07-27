@@ -90,8 +90,14 @@ useEffect(() => {
     <Box display="flex" minHeight="100vh">
       {/* Sidebar */}
       <Box width="240px" bgcolor="#f5f5f5" p={3}>
-        <Typography fontWeight="bold" mb={2}>{user.name}</Typography>
-        <Button fullWidth variant="outlined" sx={{ mb: 2 }}>MY RFQS</Button>
+      <Typography fontWeight="bold" mb={2}>{user.name}</Typography>
+        <Button
+          fullWidth
+          variant="outlined"
+          sx={{ mb: 2 }}
+          onClick={() => navigate('/my-rfqs')}>
+           MY RFQS
+        </Button>
         <Button fullWidth variant="contained" sx={{ mb: 2 }}>ACCOUNT INFO</Button>
         <Button fullWidth color="error" onClick={handleLogout}>LOGOUT</Button>
       </Box>

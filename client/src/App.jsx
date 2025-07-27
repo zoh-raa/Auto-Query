@@ -14,6 +14,12 @@ import HomePage from './pages/HomePage'; // ✅ Correct
 import CustomerDashboard from "./pages/CustomerDashboard"; 
 import StaffDashboard from './pages/StaffDashboard';
 import SecurityLogs from './pages/SecurityLogs'; // 👈 import it
+import { CartProvider } from './contexts/CartContext';
+import CartPage from './pages/CartPage';
+import RFQFormPage from './pages/RFQFormPage';
+import RFQResultPage from './pages/RFQResultPage';
+import MyRFQsPage from './pages/MyRFQsPage';
+
 import CreateProductPage from './pages/CreateProductPage'; // 👈 import it
 import ProductPage from './pages/ProductPage';
 
@@ -21,6 +27,7 @@ function App() {
   return (
       <Router>
         <UserProvider>
+        <CartProvider>
         <ThemeProvider theme={MyTheme}>
           <MyAppBar />
           <Toaster position="top-right" /> {/* ✅ Add toaster here */}
@@ -30,17 +37,18 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/register-staff" element={<RegisterStaff />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/rfq-form" element={<RFQFormPage />} />
               <Route path="/staff/login" element={<StaffLogin />} />
               <Route path="/customer/dashboard" element={<CustomerDashboard />} />
               <Route path="/staff/dashboard" element={<StaffDashboard />} />
               <Route path="/staff/security-logs" element={<SecurityLogs />} /> {/* ✅ Add this */}
-              <Route path="/staff/create-product" element={<CreateProductPage />} /> {/* 👈 Add this */}
-              <Route path="/product" element={<ProductPage />} />
             </Routes>
           </Container>
-        </ThemeProvider>
-        </UserProvider>
-      </Router>
+      </ThemeProvider>
+    </CartProvider>
+  </UserProvider>
+</Router>
   );
 }
 

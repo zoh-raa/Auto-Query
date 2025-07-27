@@ -50,3 +50,7 @@ This is the backend server for the Learning App, built with [Express.js](https:/
 - Multer
 - bcrypt
 - dotenv
+
+
+
+npm install @google/generative-ai
