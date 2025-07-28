@@ -44,7 +44,21 @@ const ProductPage = () => {
         <Grid container spacing={3}>
           {parts.map(part => (
             <Grid item xs={12} sm={6} md={4} key={part.productId}>
-              <Paper sx={{ p: 2, borderRadius: 3 }}>
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: 3,
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-12px) scale(1.03)',
+                    boxShadow: 8,
+                    zIndex: 10,
+                  },
+                }}
+                onClick={() => navigate(`/parts/${part.productId}`)}
+                elevation={4}
+              >
                 {part.imageUrl && (
                   <Box
                     component="img"
@@ -55,10 +69,7 @@ const ProductPage = () => {
                 )}
                 <Typography variant="h6">{part.productName}</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  ID: {part.productId}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Qty: {part.quantity}
+                  SGD {Number(part.price).toFixed(2)}
                 </Typography>
               </Paper>
             </Grid>

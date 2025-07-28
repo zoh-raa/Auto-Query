@@ -7,10 +7,9 @@ const upload = multer({ dest: 'uploads/' });
 // POST /staff/products
 router.post('/', upload.single('image'), async (req, res) => {
   try {
-    const { productName, productId, productNumber, productDescription, quantity } = req.body;
-    const image = req.file;
+    const { productName, productId, productNumber, productDescription, quantity, productBrand, price } = req.body;
 
-    if (!productName || !productId || !productNumber || !productDescription || !image || !quantity) {
+    if (!productName || !productId || !productNumber || !productDescription || !quantity || !productBrand || !price) {
       return res.status(400).json({ message: 'Missing fields' });
     }
 
@@ -20,7 +19,9 @@ router.post('/', upload.single('image'), async (req, res) => {
       productNumber,
       productDescription,
       quantity,
-      imageUrl: image.filename,
+      productBrand,
+      price,
+      imageUrl: req.file ? req.file.filename : null
     });
 
     res.status(201).json({ message: 'Product saved', product: newProduct });
@@ -38,6 +39,28 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+// GET /staff/products/:productId
+router.get('/:productId', async (req, res) => {
+  try {
+    const product = await Product.findOne({ where: { productId: req.params.productId } });
+    if (!product) return res.status(404).json({ message: 'Not found' });
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+// DELETE /staff/products/:productId
+router.delete('/:productId', async (req, res) => {
+  try {
+    const deleted = await Product.destroy({ where: { productId: req.params.productId } });
+    if (deleted) return res.json({ message: 'Deleted' });
+    res.status(404).json({ message: 'Not found' });
+  } catch (err) {
+    res.status(500).json({ error: 'Delete failed' });
   }
 });
 
