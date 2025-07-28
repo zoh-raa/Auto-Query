@@ -48,7 +48,7 @@ function Register() {
                 const res = await http.post('/customer/register', data);
                 console.log('✅ Register response:', res.data);
                 toast.success('Registration successful!');
-                navigate('/login');
+                setTimeout(() => navigate('/'), 1500); // 👈 Redirect to homepage after short delay
             } catch (err) {
                 console.error('❌ Register error:', err);
                 toast.error(
@@ -130,8 +130,6 @@ function Register() {
 
             </Box>
 
-
-            <ToastContainer />
         </Box>
     );
 }
