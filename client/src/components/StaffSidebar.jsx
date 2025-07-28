@@ -16,7 +16,7 @@ const StaffSidebar = () => {
   const location = useLocation();
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem('accessToken');
     setUser(null);
     navigate('/');
   };

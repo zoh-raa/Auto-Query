@@ -106,7 +106,7 @@ useEffect(() => {
       all: newValue,
       active: newValue,
       low: newValue,
-      dormant: newValue
+      inactive: newValue
     });
   } else {
     const updated = {
@@ -123,9 +123,10 @@ const handleInfoClick = async (user) => {
   try {
     const res = await axios.post("http://localhost:3001/staff/inactivity-likelihood", {
       email: user.email,
-      login_count: user.login_count
+      login_count: user.login_count,
+      created_at: user.createdAt // if available
     }, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` }
+      headers: { Authorization: `Bearer ${localStorage.getItem('staffAccessToken')}` }
     });
 
     const userWithLikelihood = {

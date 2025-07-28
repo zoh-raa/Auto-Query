@@ -8,6 +8,51 @@ const { validateToken } = require('../middlewares/auth');
 require('dotenv').config();
 const { LoginAttempt } = require('../models');
 const axios = require('axios'); // if not already
+// ✅ Claude-based anomaly scoring
+const classifyAnomaly = require('../utils/anomalyClassifier'); // at top of file
+
+
+router.get('/login-history/:id', async (req, res) => {
+  console.log("🎯 Hit /api/customer/login-history/:id route", req.params.id); // ✅ add this
+
+  const { id } = req.params;
+
+  try {
+    const customer = await Customer.findByPk(id, {
+      attributes: ['id', 'email', 'login_count']
+    });
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    const logins = await LoginAttempt.findAll({
+      where: { email: customer.email },
+      // ✅ Correct
+      attributes: ['createdAt']
+
+    });
+
+    const monthlyCounts = Array(12).fill(0);
+      logins.forEach(({ createdAt }) => {
+      const month = new Date(createdAt).getMonth();
+      monthlyCounts[month]++;
+  });
+
+
+    const start_month_index = monthlyCounts.findIndex(count => count > 0);
+
+    res.json({
+      login_count: customer.login_count,
+      monthly_logins: monthlyCounts,
+      start_month_index: start_month_index === -1 ? 0 : start_month_index
+    });
+
+  } catch (err) {
+    console.error('Login history error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 // POST /customer/register
 router.post("/register", async (req, res) => {
@@ -71,25 +116,40 @@ router.post("/login", async (req, res) => {
     }
     const device = req.headers['user-agent'] || "Unknown";
 
+   const previousLogin = await LoginAttempt.findOne({
+      where: { email: customer.email },
+      order: [['createdAt', 'DESC']]
+    });
+
+    const sameDevice = previousLogin?.device === device;
+    const sameIP = previousLogin?.ip === ip;
+    const sameLocation = previousLogin?.location === location;
+
+    const anomaly_score = await classifyAnomaly({ sameDevice, sameIP, sameLocation });
+
+    // ✅ Save login with AI score
     await LoginAttempt.create({
       email: customer.email,
       ip,
       location,
       device,
-      anomaly_score: "Low"
+      anomaly_score
     });
+
+    const userInfo = {
+    id: customer.id,
+    email: customer.email,
+    name: customer.name
+  };
+
 
 
     // ✅ Continue login flow
-    const userInfo = {
-      id: customer.id,
-      email: customer.email,
-      name: customer.name
-    };
-
-    const accessToken = sign(userInfo, process.env.APP_SECRET, {
-      expiresIn: process.env.TOKEN_EXPIRES_IN
-    });
+   const accessToken = sign(
+  { id: customer.id, role: 'customer' }, // ✅ Add role here
+  process.env.APP_SECRET,
+  { expiresIn: process.env.TOKEN_EXPIRES_IN }
+);
 
     res.json({ accessToken, user: userInfo });
   } catch (err) {
@@ -97,44 +157,6 @@ router.post("/login", async (req, res) => {
     res.status(400).json({ errors: err.errors || [err.message] });
   }
 });
-
-router.get('/login-history/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    // Step 1: Get customer record (from Customer table)
-    const customer = await Customer.findByPk(id, {
-      attributes: ['id', 'email', 'login_count']
-    });
-
-    if (!customer) {
-      return res.status(404).json({ error: 'Customer not found' });
-    }
-
-    // Step 2: Get login attempts (from LoginAttempt table) using email
-    const logins = await LoginAttempt.findAll({
-      where: { email: customer.email },
-      attributes: ['timestamp']
-    });
-
-    // Step 3: Count logins by month
-    const monthlyCounts = Array(12).fill(0);
-    logins.forEach(({ timestamp }) => {
-      const month = new Date(timestamp).getMonth(); // 0 = Jan
-      monthlyCounts[month]++;
-    });
-
-    // Step 4: Respond with both login_count and monthly login history
-    res.json({
-      login_count: customer.login_count,
-      monthly_logins: monthlyCounts
-    });
-  } catch (err) {
-    console.error('Login history error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
 
 
 // ✅ Add this route for /customer/auth

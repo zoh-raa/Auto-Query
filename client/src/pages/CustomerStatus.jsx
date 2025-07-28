@@ -15,35 +15,50 @@ const CustomerStatus = () => {
 
   const { user } = state;
 
-useEffect(() => {
-  const fetchLoginData = async () => {
-    try {
-      const res = await axios.get(`/api/customer/login-history/${user.id}`);
-      const { login_count, monthly_logins } = res.data;
+  useEffect(() => {
+    const fetchLoginData = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3001/customer/login-history/${user.id}`);
+        console.log("✅ API response:", res.data); // ✅ Step 1: log API data
 
-      // Optionally update login count if you want to override what's in `user.login_count`
-      // setLoginCount(login_count);
+        const { login_count, monthly_logins, start_month_index } = res.data;
 
-      const chartConfig = {
-        type: 'line',
-        data: {
-          labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-          datasets: [{
-            label: 'Logins',
-            data: monthly_logins
-          }]
-        }
-      };
+        const allMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-      const encodedConfig = encodeURIComponent(JSON.stringify(chartConfig));
-      setChartUrl(`https://quickchart.io/chart?c=${encodedConfig}`);
-    } catch (err) {
-      console.error('Failed to load login history:', err);
-    }
-  };
+        // ✅ Step 2: Safe fallback for undefined or missing index
+        const startIndex = typeof start_month_index === 'number'
+          ? start_month_index
+          : monthly_logins.findIndex(val => val > 0) ?? 0;
 
-  fetchLoginData();
-}, [user.id]);
+        const labels = allMonths.slice(startIndex);
+        const data = monthly_logins.slice(startIndex);
+
+        const chartConfig = {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Logins',
+              data,
+              borderColor: 'rgba(54, 162, 235, 1)',
+              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+              fill: true
+            }]
+          }
+        };
+
+        const encodedConfig = encodeURIComponent(JSON.stringify(chartConfig));
+        const chartLink = `https://quickchart.io/chart?c=${encodedConfig}`;
+        console.log("🖼️ Chart URL:", chartLink); // ✅ Step 3: test in browser
+        setChartUrl(chartLink);
+
+      } catch (err) {
+        console.error('❌ Failed to load login history:', err);
+      }
+    };
+
+    fetchLoginData();
+  }, [user.id]);
 
   return (
     <Box display="flex" minHeight="100vh" bgcolor="#f2f4f7">

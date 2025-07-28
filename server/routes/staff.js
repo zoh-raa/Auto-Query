@@ -5,10 +5,10 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { validateToken } = require('../middlewares/auth');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { LoginAttempt } = require('../models');
 require('dotenv').config();
 const axios = require('axios'); // ✅ Import this if not already
 const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
+const { LoginAttempt } = require('../models'); // ✅ Required for /security-logs
 
 
 router.post('/register', async (req, res) => {
@@ -72,30 +72,6 @@ router.post('/login', async (req, res) => {
 
     const match = await bcrypt.compare(password, staff.password);
     if (!match) return res.status(400).json({ message: "Incorrect password" });
-
-    // ✅ Get IP and Geo info using ipapi.co
-    let ip = "Unknown";
-    let location = "Unknown";
-
-    try {
-      const geoRes = await axios.get("https://ipapi.co/json/");
-      ip = geoRes.data.ip;
-      location = `${geoRes.data.city}, ${geoRes.data.region}, ${geoRes.data.country_name}`;
-    } catch (geoErr) {
-      console.warn("🌐 IPAPI lookup failed:", geoErr.message);
-    }
-
-    const device = req.headers['user-agent'] || "Unknown";
-
-    // ✅ Log attempt
-    await LoginAttempt.create({
-      email: staff.email,
-      ip,
-      location,
-      device,
-      anomaly_score: "Low"
-    });
-
 
     // ✅ Return response
     const token = jwt.sign(
@@ -200,43 +176,46 @@ const bedrockClient = new BedrockRuntimeClient({
 });
 
 router.post('/inactivity-likelihood', async (req, res) => {
-  const { email, login_count } = req.body;
-
-  const prompt = `Estimate the likelihood (as a % from 0 to 100) that a user is becoming inactive based on this info:
-- Email: ${email}
-- Login count: ${login_count}
-
-Return only a number (no explanation).`;
-
-  const input = {
-    modelId: "anthropic.claude-3-haiku-20240307-v1:0",
-    contentType: "application/json",
-    accept: "application/json",
-    body: JSON.stringify({
-      anthropic_version: "bedrock-2023-05-31", // ✅ REQUIRED
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 20,
-      temperature: 0.2
-    })
-  };
+  const { email } = req.body;
 
   try {
-    const command = new InvokeModelCommand(input);
-    const response = await bedrockClient.send(command);
+    // Get latest login
+    const latestLogin = await LoginAttempt.findOne({
+      where: { email },
+      order: [['createdAt', 'DESC']]
+    });
 
-    const raw = await response.body.transformToString();
-    const match = raw.match(/\d+/);
-    const likelihood = match ? parseInt(match[0]) : 50;
+    // Get first login
+    const firstLogin = await LoginAttempt.findOne({
+      where: { email },
+      order: [['createdAt', 'ASC']]
+    });
+
+    // Get total login count
+    const totalLogins = await LoginAttempt.count({ where: { email } });
+
+    // If no logins at all, assume high inactivity risk
+    if (!firstLogin) return res.json({ likelihood: 99 });
+
+    // Calculate account age in days (based on first login)
+    const accountAgeDays = Math.max(
+      (Date.now() - new Date(firstLogin.createdAt)) / (1000 * 60 * 60 * 24),
+      1 // prevent divide-by-zero
+    );
+
+    // Calculate average logins per day
+    const loginsPerDay = totalLogins / accountAgeDays;
+
+    // Simple inverse logic: fewer logins per day → higher inactivity likelihood
+    let likelihood = 100 - Math.min(loginsPerDay * 100, 99); // cap at 99%
+
+    // Round and ensure bounds
+    likelihood = Math.max(1, Math.min(99, Math.round(likelihood)));
 
     res.json({ likelihood });
   } catch (err) {
-    console.error("❌ Bedrock SDK error:", err?.message || err);
-    res.status(500).json({ message: "SDK-based Bedrock call failed." });
+    console.error("❌ Failed to compute likelihood:", err.message);
+    res.status(500).json({ message: "Failed to calculate inactivity likelihood" });
   }
 });
 

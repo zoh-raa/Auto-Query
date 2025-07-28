@@ -1,9 +1,15 @@
-// CreateProductPage.jsx
 import React, { useState, useEffect } from 'react';
 import {
-  Box, Button, TextField, Typography, Paper, Stack, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions
+  Box, Button, TextField, Typography, Paper, Stack, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions,
+  FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import StaffSidebar from '../components/StaffSidebar';
+
+const brandOptions = [
+  'Honda',
+  'Yamaha',
+  'Other'
+];
 
 const CreateProductPage = () => {
   const [tab, setTab] = useState(0);
@@ -13,7 +19,9 @@ const CreateProductPage = () => {
     productNumber: '',
     productDescription: '',
     image: null,
-    quantity: ''
+    quantity: '',
+    productBrand: '',
+    price: '' // <-- added
   });
   const [parts, setParts] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -68,7 +76,9 @@ const CreateProductPage = () => {
           productNumber: '',
           productDescription: '',
           image: null,
-          quantity: ''
+          quantity: '',
+          productBrand: '',   // <-- add this
+          price: ''           // <-- add this
         });
         setConfirmOpen(false);
         fetchParts();
@@ -77,6 +87,26 @@ const CreateProductPage = () => {
         alert('Failed to create product');
         setConfirmOpen(false);
       });
+  };
+
+  const handleDelete = async (productId) => {
+    if (!window.confirm('Are you sure you want to delete this part?')) return;
+    try {
+      const res = await fetch(`http://localhost:3001/staff/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+      if (res.ok) {
+        setParts(parts => parts.filter(part => part.productId !== productId));
+        alert('Part deleted.');
+      } else {
+        alert('Failed to delete part.');
+      }
+    } catch (err) {
+      alert('Error deleting part.');
+    }
   };
 
   // Edit/Delete Parts Tab
@@ -90,41 +120,42 @@ const CreateProductPage = () => {
           {parts.map(part => (
             <Paper key={part.productId} sx={{ p: 2, mb: 2 }}>
               <Typography fontWeight="bold">{part.productName}</Typography>
-              <Typography variant="body2">Ref: {part.productId} | Number: {part.productNumber}</Typography>
-              <Typography variant="body2">Qty: {part.quantity}</Typography>
+              <Typography variant="body2">Reference Number: {part.productId}</Typography>
+              <Typography variant="body2">Brand: {part.productBrand}</Typography> {/* <-- Add this */}
+              <Typography variant="body2">Catalog Number: {part.productNumber}</Typography>
+              <Typography variant="body2">Quantity: {part.quantity}</Typography>
+              <Typography variant="body2">Price: {part.price}</Typography> {/* <-- Add this */}
               <Typography variant="body2">{part.productDescription}</Typography>
               <Box mt={2} display="flex" gap={1}>
-              <Button
-                variant="outlined"
-                color="primary"
-                size="small"
-                onClick={() => {
-                  // Set form data and switch to Add Parts tab
-                  setFormData({
-                    productName: part.productName,
-                    productId: part.productId,
-                    productNumber: part.productNumber,
-                    productDescription: part.productDescription,
-                    image: null, // image editing not supported here
-                    quantity: part.quantity
-                  });
-                  setTab(0);
-                }}
-              >
-                Edit
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                size="small"
-                onClick={() => {
-                  // TODO: Implement delete logic
-                  alert(`Delete part: ${part.productName}`);
-                }}
-              >
-                Delete
-              </Button>
-            </Box>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                  onClick={() => {
+                    setFormData({
+                      productName: part.productName,
+                      productId: part.productId,
+                      productNumber: part.productNumber,
+                      productDescription: part.productDescription,
+                      image: null,
+                      quantity: part.quantity,
+                      productBrand: part.productBrand, // <-- Add this
+                      price: part.price // <-- Add this
+                    });
+                    setTab(0);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => handleDelete(part.productId)}
+                >
+                  Delete
+                </Button>
+              </Box>
             </Paper>
           ))}
         </Box>
@@ -187,6 +218,26 @@ const CreateProductPage = () => {
                       required
                       inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
                     />
+                  </Box>
+                  <Box flex={1}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    Part Brand:
+                  </Typography>
+                  <FormControl fullWidth>
+                    <InputLabel id="brand-label">Select Brand</InputLabel>
+                    <Select
+                      labelId="brand-label"
+                      name="productBrand"
+                      value={formData.productBrand}
+                      label="Select Brand"
+                      onChange={handleChange}
+                      required
+                    >
+                      {brandOptions.map(brand => (
+                        <MenuItem key={brand} value={brand}>{brand}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                   </Box>
                   <Box flex={1}>
                     <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
@@ -254,6 +305,29 @@ const CreateProductPage = () => {
                       inputProps={{ min: 0 }}
                     />
                   </Box>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                      Price:
+                    </Typography>
+                    <TextField
+                      name="price"
+                      type="number"
+                      sx={{ width: 120 }}
+                      onChange={e => {
+                        // Prevent negative values
+                        const value = e.target.value;
+                        handleChange({
+                          target: {
+                            name: 'price',
+                            value: value === '' ? '' : Math.max(0, Number(value))
+                          }
+                        });
+                      }}
+                      value={formData.price}
+                      required
+                      inputProps={{ min: 0, step: "0.01" }}
+                    />
+                  </Box>
                   <Box sx={{ pb: 0.5 }}>
                     <Button
                       variant="contained"
@@ -283,10 +357,12 @@ const CreateProductPage = () => {
         <DialogContent dividers>
           <Typography><b>Part Name:</b> {formData.productName}</Typography>
           <Typography><b>Reference Number:</b> {formData.productId}</Typography>
+          <Typography><b>Brand:</b> {formData.productBrand}</Typography>
           <Typography><b>Catalog Part Number:</b> {formData.productNumber}</Typography>
           <Typography><b>Description:</b> {formData.productDescription}</Typography>
           <Typography><b>Quantity:</b> {formData.quantity}</Typography>
           <Typography><b>Image:</b> {formData.image && formData.image.name ? formData.image.name : 'No file selected'}</Typography>
+          <Typography><b>Price:</b> {formData.price}</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmOpen(false)} color="inherit">Cancel</Button>

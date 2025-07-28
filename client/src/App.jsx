@@ -23,6 +23,7 @@ import CustomerStatus from './pages/CustomerStatus';
 
 import CreateProductPage from './pages/CreateProductPage'; // 👈 import it
 import ProductPage from './pages/ProductPage';
+import PartDetailsPage from './pages/PartDetailsPage';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
               <Route path="/staff/security-logs" element={<SecurityLogs />} /> {/* ✅ Add this */}
               <Route path="/staff/create-product" element={<CreateProductPage />} />
               <Route path="/product" element={<ProductPage />} />
+              <Route path="/parts/:productId" element={<PartDetailsPage />} />
             </Routes>
           </Container>
       </ThemeProvider>

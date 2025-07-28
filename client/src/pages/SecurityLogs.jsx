@@ -17,8 +17,9 @@ const SecurityLogs = () => {
 
   useEffect(() => {
     axios.get('http://localhost:3001/staff/security-logs', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
-    })
+    headers: { Authorization: `Bearer ${localStorage.getItem('staffAccessToken')}` }
+  })
+
       .then(res => setSecurityLogs(res.data))
       .catch(err => {
         console.error("❌ Failed to fetch security logs:", err?.response?.data || err.message);

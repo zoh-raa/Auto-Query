@@ -79,9 +79,9 @@ useEffect(() => {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    localStorage.removeItem('accessToken');
     setUser(null);
-    navigate('/login');
+    navigate('/');
   };
 
   if (loading || !editableUser) return <Box p={4}><CircularProgress /></Box>;
