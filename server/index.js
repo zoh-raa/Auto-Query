@@ -44,16 +44,22 @@ app.use("/staff/products", productRoute);
 
 // Database sync & server start
 const db = require('./models');
-db.sequelize.sync({ alter: true })
-    .then(() => {
-        let port = process.env.APP_PORT || 3001;
-        app.listen(port, () => {
-            console.log(`⚡ Server running on http://localhost:${port}`);
-        });
-    })
-    .catch((err) => {
-        console.log(err);
+const { Customer, Review } = db; // ⬅️ only sync these (skip Staff)
+
+(async () => {
+  try {
+    await Customer.sync({ alter: true });
+    await Review.sync({ alter: true }); // optional: only if your Review model changed
+
+    const port = process.env.APP_PORT || 3001;
+    app.listen(port, () => {
+      console.log(`⚡ Server running on http://localhost:${port}`);
     });
+  } catch (err) {
+    console.log("❌ Error during model sync:", err);
+  }
+})();
+
     
 const staffRoutes = require('./routes/staff');    
 app.use('/staff', staffRoutes);

@@ -1,18 +1,26 @@
 {
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.848.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.1.2",
     "@mui/material": "^7.1.2",
     "@mui/x-date-pickers": "^8.6.0",
-    "axios": "^1.10.0",
+    "apexcharts": "^5.3.1",
+    "axios": "^1.11.0",
+    "chart.js": "^4.5.0",
     "dayjs": "^1.11.13",
     "formik": "^2.4.6",
     "jsonwebtoken": "^9.0.2",
     "nanoid": "^5.1.5",
     "qrcode": "^1.5.4",
+    "react": "^18.2.0",
+    "react-apexcharts": "^1.7.0",
+    "react-chartjs-2": "^5.3.0",
+    "react-dom": "^18.2.0",
     "react-router": "^7.6.3",
     "react-toastify": "^11.0.5",
+    "recharts": "^3.1.0",
     "yup": "^1.6.1"
   }
 }

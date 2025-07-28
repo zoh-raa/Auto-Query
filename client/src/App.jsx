@@ -19,6 +19,7 @@ import CartPage from './pages/CartPage';
 import RFQFormPage from './pages/RFQFormPage';
 import RFQResultPage from './pages/RFQResultPage';
 import MyRFQsPage from './pages/MyRFQsPage';
+import CustomerStatus from './pages/CustomerStatus';
 
 import CreateProductPage from './pages/CreateProductPage'; // 👈 import it
 import ProductPage from './pages/ProductPage';
@@ -42,6 +43,7 @@ function App() {
               <Route path="/staff/login" element={<StaffLogin />} />
               <Route path="/customer/dashboard" element={<CustomerDashboard />} />
               <Route path="/staff/dashboard" element={<StaffDashboard />} />
+              <Route path="/staff/customer-status" element={<CustomerStatus />} />
               <Route path="/staff/security-logs" element={<SecurityLogs />} /> {/* ✅ Add this */}
               <Route path="/staff/create-product" element={<CreateProductPage />} />
               <Route path="/product" element={<ProductPage />} />
