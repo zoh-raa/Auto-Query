@@ -55,7 +55,8 @@ function RegisterStaff() {
         const res = await axios.post('http://localhost:3001/staff/register', payload);
         toast.success(res.data.message || 'Staff registered successfully!');
         localStorage.setItem("accessToken", res.data.accessToken); // Save token if returned
-        navigate('/staff/dashboard');
+        navigate('/');
+
 
       } catch (err) {
         console.error('❌ Register staff error:', err);

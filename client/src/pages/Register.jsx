@@ -125,7 +125,7 @@ function Register() {
                         }
                     }}
                 >
-                    Login
+                    Register
                 </Button>
 
             </Box>

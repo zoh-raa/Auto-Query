@@ -8,6 +8,6 @@ router.get('/my', validateToken, rfqController.getMyRFQs);
 router.get('/all', validateToken, rfqController.getAllRFQs);
 router.put('/:id', validateToken, rfqController.updateRFQ);
 router.delete('/:id', validateToken, rfqController.deleteRFQ);
-
+router.get('/:id', validateToken, rfqController.getRFQById);
 
 module.exports = router;

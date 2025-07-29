@@ -31,36 +31,29 @@ router.post('/register', async (req, res) => {
     });
 
     const token = jwt.sign(
-  { id: newStaff.id, role: 'staff' },
-  process.env.APP_SECRET,
-  { expiresIn: '1h' }
-);
+      { id: newStaff.id, role: 'staff' },
+      process.env.APP_SECRET,
+      { expiresIn: '1h' }
+    );
 
-  res.status(201).json({
-    message: "Staff registered successfully",
-    accessToken: token,
-    staff: {
-      id: newStaff.id,
-      name: newStaff.name,
-      email: newStaff.email,
-      staff_id: newStaff.staff_id,
-      role: newStaff.role
-    }
-  });
-
-    res.status(201).json({ message: "Staff registered successfully", staff: {
-      id: newStaff.id,
-      name: newStaff.name,
-      email: newStaff.email,
-      staff_id: newStaff.staff_id,
-      role: newStaff.role
-    }});
+    return res.status(201).json({
+      message: "Staff registered successfully",
+      accessToken: token,
+      staff: {
+        id: newStaff.id,
+        name: newStaff.name,
+        email: newStaff.email,
+        staff_id: newStaff.staff_id,
+        role: newStaff.role
+      }
+    });
 
   } catch (err) {
-    console.error("Registration error:", err);
-    res.status(500).json({ message: "Server error during registration" });
+    console.error("❌ Registration error:", err);
+    return res.status(500).json({ message: "Server error during registration" });
   }
 });
+
 
 
 router.post('/login', async (req, res) => {
@@ -229,7 +222,25 @@ router.get("/security-logs", async (req, res) => {
       order: [['createdAt', 'DESC']],
       limit: 50
     });
-    res.json(logs);
+
+    const logsWithGeo = await Promise.all(logs.map(async log => {
+      try {
+        const geoRes = await axios.get(`https://ipapi.co/${log.ip}/json/`);
+        return {
+          ...log.dataValues,
+          latitude: geoRes.data.latitude,
+          longitude: geoRes.data.longitude
+        };
+      } catch {
+        return {
+          ...log.dataValues,
+          latitude: null,
+          longitude: null
+        };
+      }
+    }));
+
+    res.json(logsWithGeo);
   } catch (err) {
     console.error("❌ Failed to fetch security logs:", err);
     res.status(500).json({ error: "Internal server error" });

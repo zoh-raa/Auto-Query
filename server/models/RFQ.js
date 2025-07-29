@@ -16,6 +16,10 @@ module.exports = (sequelize, DataTypes) => {
     remarks: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    customerId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
     }
   });
 

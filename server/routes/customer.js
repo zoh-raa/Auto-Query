@@ -54,36 +54,36 @@ router.get('/login-history/:id', async (req, res) => {
   }
 });
 
-// POST /customer/register
-router.post("/register", async (req, res) => {
-  let data = req.body;
-
-  const validationSchema = yup.object({
-    name: yup.string().trim().min(3).max(50).required()
-      .matches(/^[a-zA-Z '-,.]+$/, "Name only allows letters, spaces and characters: ' - , ."),
-    email: yup.string().trim().lowercase().email().max(50).required(),
-    password: yup.string().trim().min(8).max(50).required()
-      .matches(/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$/, "Password must contain at least 1 letter and 1 number")
-  });
+router.post('/register', async (req, res) => {
+  const { name, email, password } = req.body;
 
   try {
-    data = await validationSchema.validate(data, { abortEarly: false });
-
-    const existing = await Customer.findOne({ where: { email: data.email } });
-    if (existing) {
+    // ✅ Check if email already exists in Customer table
+    const existingCustomer = await Customer.findOne({ where: { email } });
+    if (existingCustomer) {
       return res.status(400).json({ message: "Email already exists." });
     }
 
-    data.password = await bcrypt.hash(data.password, 10);
-    data.address = "";
-    data.login_count = 0;
+    // ✅ Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await Customer.create(data);
-    res.json({ message: `Email ${result.email} was registered successfully.` });
+    // ✅ Create new customer
+    const newCustomer = await Customer.create({
+      name,
+      email,
+      password: hashedPassword,
+      login_count: 0,
+      address: ""
+    });
+
+    res.status(201).json({ message: `Email ${newCustomer.email} was registered successfully.` });
+
   } catch (err) {
-    res.status(400).json({ errors: err.errors });
+    console.error("❌ Customer registration error:", err);
+    res.status(500).json({ message: "Server error during customer registration" });
   }
 });
+
 
 router.post("/login", async (req, res) => {
   let data = req.body;

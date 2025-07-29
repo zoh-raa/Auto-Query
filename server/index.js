@@ -44,13 +44,14 @@ app.use("/staff/products", productRoute);
 
 // Database sync & server start
 const db = require('./models');
-const { Customer, Review, LoginAttempt } = db; // ⬅️ only sync these (skip Staff)
+const { Customer, Review, LoginAttempt, Staff } = db; // ⬅️ only sync these (skip Staff)
 
 (async () => {
   try {
     await Customer.sync({ alter: true });
     await Review.sync({ alter: true }); // optional: only if your Review model changed
     await LoginAttempt.sync({ alter: true }); // ✅ add this line
+    await Staff.sync({ alter: true });
 
     const port = process.env.APP_PORT || 3001;
     app.listen(port, () => {

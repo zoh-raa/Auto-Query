@@ -118,3 +118,23 @@ exports.deleteRFQ = async (req, res) => {
     res.status(500).json({ message: "Failed to delete RFQ" });
   }
 };
+
+exports.getRFQById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const rfq = await RFQ.findOne({
+      where: { id },
+      include: [RFQItem, Customer],
+    });
+
+    if (!rfq) {
+      return res.status(404).json({ message: 'RFQ not found' });
+    }
+
+    res.json(rfq);
+  } catch (err) {
+    console.error('❌ getRFQById error:', err);
+    res.status(500).json({ message: 'Failed to fetch RFQ' });
+  }
+};
