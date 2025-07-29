@@ -35,6 +35,8 @@ const rfqRoute = require('./routes/rfq');
 const cartRoutes = require('./routes/cart');
 const productRoute = require('./routes/products'); // im gonna crashout if upload dont work
 
+
+app.use('/rfq', rfqRoute); // ✅ This makes POST /rfq available
 app.use("/customer", customerRoute);
 app.use("/file", fileRoute);
 app.use("/review", reviewRoute); // ✅ New line
@@ -44,7 +46,7 @@ app.use("/staff/products", productRoute);
 
 // Database sync & server start
 const db = require('./models');
-const { Customer, Review, LoginAttempt, Staff } = db; // ⬅️ only sync these (skip Staff)
+const { Customer, Review, LoginAttempt, Staff, Cart, Product, RFQ, RFQItem } = db; // ⬅️ only sync these (skip Staff)
 
 (async () => {
   try {
@@ -52,6 +54,10 @@ const { Customer, Review, LoginAttempt, Staff } = db; // ⬅️ only sync these 
     await Review.sync({ alter: true }); // optional: only if your Review model changed
     await LoginAttempt.sync({ alter: true }); // ✅ add this line
     await Staff.sync({ alter: true });
+    await Cart.sync({ alter: true });
+    await Product.sync({ alter: true });
+    await RFQ.sync({ alter: true });
+    await RFQItem.sync({ alter: true });
 
     const port = process.env.APP_PORT || 3001;
     app.listen(port, () => {
