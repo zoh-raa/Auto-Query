@@ -23,7 +23,8 @@ import CustomerStatus from './pages/CustomerStatus';
 import CreateProductPage from './pages/CreateProductPage'; // 👈 import it
 import ProductPage from './pages/ProductPage';
 import PartDetailsPage from './pages/PartDetailsPage';
-
+import StaffRFQPage from './pages/StaffRFQPage';
+import StaffRFQEditPage from './pages/StaffRFQEditPage';
 
 
 function App() {
@@ -52,6 +53,8 @@ function App() {
               <Route path="/parts/:productId" element={<PartDetailsPage />} />
               <Route path="/rfq-result" element={<RFQResultPage />} />
               <Route path="/my-rfqs" element={<MyRFQsPage />} />
+              <Route path="/staff/rfqs/edit/:id" element={<StaffRFQEditPage/>}/>
+              <Route path="/staff/rfqs" element={<StaffRFQPage/>}/>
               
               
             </Routes>

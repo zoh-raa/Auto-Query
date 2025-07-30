@@ -58,11 +58,12 @@ const StaffSidebar = () => {
         </Button>
         <Button
           fullWidth
-          startIcon={<ListAltIcon />}
-          variant="outlined"
+          startIcon={<ListAltIcon />} // you can change this icon if you want
+          variant={isActive('/staff/rfqs') ? 'contained' : 'outlined'}
           color="inherit"
+          onClick={() => navigate('/staff/rfqs')}
         >
-          Check stock quantity
+          View/Edit RFQs
         </Button>
         <Button
           fullWidth
