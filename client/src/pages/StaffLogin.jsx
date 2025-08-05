@@ -1,18 +1,24 @@
-import React from 'react';
-import { Box, Typography, TextField, Button } from '@mui/material';
+import React, { useContext } from 'react';
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Divider
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import UserContext from '../contexts/UserContext'; // ✅ add this
-import { useContext } from 'react';                // ✅ add this
+import UserContext from '../contexts/UserContext';
+import SecurityIcon from '@mui/icons-material/Security'; // 👈 Staff icon
 
 function StaffLogin() {
   const navigate = useNavigate();
-  const { setUser } = useContext(UserContext);       // ✅ add this inside StaffLogin()
-
+  const { setUser } = useContext(UserContext);
 
   const formik = useFormik({
     initialValues: {
@@ -24,91 +30,95 @@ function StaffLogin() {
       password: yup.string().required('Password is required')
     }),
     onSubmit: async (data) => {
-  try {
-    const payload = {
-      staff_id: data.staff_id.trim(),
-      password: data.password.trim()
-    };
+      try {
+        const payload = {
+          staff_id: data.staff_id.trim(),
+          password: data.password.trim()
+        };
 
-    const res = await axios.post('http://localhost:3001/staff/login', payload);
+        const res = await axios.post('http://localhost:3001/staff/login', payload);
 
-    // ✅ Assume res.data.user contains staff name and email
-    const staffUser = {
-      name: res.data.user.name || "Staff",      // Adjust based on your backend response
-      email: res.data.user.email,
-      role: "staff"
-    };
+        const staffUser = {
+          name: res.data.user.name || "Staff",
+          email: res.data.user.email,
+          role: "staff"
+        };
 
-    setUser(staffUser);
-    localStorage.setItem("user", JSON.stringify(staffUser));
-    localStorage.setItem("accessToken", res.data.accessToken);
+        setUser(staffUser);
+        localStorage.setItem("user", JSON.stringify(staffUser));
+        localStorage.setItem("accessToken", res.data.accessToken);
 
-    toast.success('Login successful!');
-    navigate('/staff/dashboard');
+        toast.success('Login successful!');
+        navigate('/staff/dashboard');
 
-  } catch (err) {
-    console.error('❌ Staff login error:', err);
-    toast.error(
-      err?.response?.data?.message || 'Login failed. Please check your credentials.'
-    );
-  }
-}
-
+      } catch (err) {
+        console.error('❌ Staff login error:', err);
+        toast.error(
+          err?.response?.data?.message || 'Login failed. Please check your credentials.'
+        );
+      }
+    }
   });
 
   return (
-    <Box sx={{
-      marginTop: 8,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center'
-    }}>
-      <Typography variant="h5" sx={{ my: 2 }}>
-        Staff Login
-      </Typography>
+    <Box sx={{ backgroundColor: '#fdf2f2', minHeight: '100vh', py: 6 }}>
+      <Paper elevation={4} sx={{ maxWidth: 500, margin: '0 auto', p: 4 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <SecurityIcon sx={{ fontSize: 30, color: '#8B0000', mr: 1 }} />
+          <Typography variant="h5" fontWeight="bold" sx={{ color: '#8B0000' }}>
+            Staff Login Portal
+          </Typography>
+        </Box>
 
-      <Box component="form" sx={{ maxWidth: '500px', width: '100%' }}
-        onSubmit={formik.handleSubmit}
-      >
-        <TextField
-          fullWidth margin="dense"
-          label="Staff ID"
-          name="staff_id"
-          value={formik.values.staff_id}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          error={formik.touched.staff_id && Boolean(formik.errors.staff_id)}
-          helperText={formik.touched.staff_id && formik.errors.staff_id}
-        />
+        <Typography variant="subtitle1" sx={{ mb: 2, color: 'gray' }}>
+          This portal is for internal staff only. If you're a customer, please return to the <strong>Customer Login</strong> page.
+        </Typography>
 
-        <TextField
-          fullWidth margin="dense"
-          label="Password"
-          type="password"
-          name="password"
-          value={formik.values.password}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          error={formik.touched.password && Boolean(formik.errors.password)}
-          helperText={formik.touched.password && formik.errors.password}
-        />
+        <Divider sx={{ mb: 3 }} />
 
-        <Button
-          fullWidth
-          type="submit"
-          variant="contained"
-          sx={{
-            mt: 2,
-            backgroundColor: '#555',
-            color: 'white',
-            '&:hover': {
-              backgroundColor: '#333'
-            }
-          }}
-        >
-          Login
-        </Button>
-      </Box>
+        <Box component="form" onSubmit={formik.handleSubmit}>
+          <TextField
+            fullWidth
+            margin="dense"
+            label="Staff ID"
+            name="staff_id"
+            value={formik.values.staff_id}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            error={formik.touched.staff_id && Boolean(formik.errors.staff_id)}
+            helperText={formik.touched.staff_id && formik.errors.staff_id}
+          />
+
+          <TextField
+            fullWidth
+            margin="dense"
+            label="Password"
+            type="password"
+            name="password"
+            value={formik.values.password}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+            error={formik.touched.password && Boolean(formik.errors.password)}
+            helperText={formik.touched.password && formik.errors.password}
+          />
+
+          <Button
+            fullWidth
+            type="submit"
+            variant="contained"
+            sx={{
+              mt: 3,
+              backgroundColor: '#8B0000',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: '#5C0000'
+              }
+            }}
+          >
+            Login
+          </Button>
+        </Box>
+      </Paper>
 
       <ToastContainer />
     </Box>

@@ -54,6 +54,52 @@ router.get('/login-history/:id', async (req, res) => {
   }
 });
 
+router.post('/google-login', async (req, res) => {
+  const { name, email, googleId } = req.body;
+
+  try {
+    if (!name || !email || !googleId) {
+      return res.status(400).json({ message: "Missing Google login data." });
+    }
+
+    let customer = await Customer.findOne({ where: { email } });
+
+    if (!customer) {
+      // First-time Google login → register
+      customer = await Customer.create({
+        name,
+        email,
+        password: googleId, // placeholder for now
+        login_count: 1,
+        address: ""
+      });
+    } else {
+      // Returning user → update login count
+      await Customer.increment('login_count', { where: { id: customer.id } });
+    }
+
+    // Optional: log Google login like regular login (no anomaly scoring for now)
+
+    const userInfo = {
+      id: customer.id,
+      email: customer.email,
+      name: customer.name
+    };
+
+    const accessToken = sign(
+      { id: customer.id, role: 'customer' },
+      process.env.APP_SECRET,
+      { expiresIn: process.env.TOKEN_EXPIRES_IN }
+    );
+
+    return res.json({ accessToken, user: userInfo });
+  } catch (err) {
+    console.error('❌ Google login error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -83,6 +129,49 @@ router.post('/register', async (req, res) => {
     res.status(500).json({ message: "Server error during customer registration" });
   }
 });
+
+router.post('/google-register', async (req, res) => {
+  const { name, email, googleId } = req.body;
+
+  if (!name || !email || !googleId) {
+    return res.status(400).json({ message: "Missing Google registration data." });
+  }
+
+  try {
+    const existingCustomer = await Customer.findOne({ where: { email } });
+
+    if (existingCustomer) {
+      // ❌ Email already in DB → conflict
+      return res.status(409).json({ message: "Email already registered. Please log in instead." });
+    }
+
+    const newCustomer = await Customer.create({
+      name,
+      email,
+      password: googleId, // placeholder
+      login_count: 1,
+      address: ""
+    });
+
+    const accessToken = sign(
+      { id: newCustomer.id, role: 'customer' },
+      process.env.APP_SECRET,
+      { expiresIn: process.env.TOKEN_EXPIRES_IN }
+    );
+
+    const userInfo = {
+      id: newCustomer.id,
+      email: newCustomer.email,
+      name: newCustomer.name
+    };
+
+    return res.status(201).json({ accessToken, user: userInfo });
+  } catch (err) {
+    console.error('❌ Google register error:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 
 
 router.post("/login", async (req, res) => {
