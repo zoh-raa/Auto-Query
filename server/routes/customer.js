@@ -80,11 +80,43 @@ router.post('/google-login', async (req, res) => {
 
     // Optional: log Google login like regular login (no anomaly scoring for now)
 
-    const userInfo = {
-      id: customer.id,
-      email: customer.email,
-      name: customer.name
-    };
+     // write a LoginAttempt for Google sign in
+    try {
+      // extract client ip
+      let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+      if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+      if (ip.includes('::ffff:')) ip = ip.split('::ffff:')[1];
+      if (ip === '::1') ip = '127.0.0.1';
+
+      // geo lookup
+      let location = 'Localhost';
+      if (ip && ip !== '127.0.0.1') {
+        try {
+          const geoRes = await axios.get(`https://ipapi.co/${ip}/json/`, { timeout: 1500 });
+          const city = geoRes.data.city || 'Unknown';
+          const region = geoRes.data.region || 'Unknown';
+          const country = geoRes.data.country_name || 'Unknown';
+          location = `${city}, ${region}, ${country}`;
+        } catch (e) {
+          console.warn('Geo lookup failed:', e.message);
+        }
+      }
+
+      const device = req.headers['user-agent'] || 'Unknown';
+
+      const row = await LoginAttempt.create({
+        email: customer.email,
+        ip,
+        location,
+        device,
+        anomaly_score: 0
+      });
+      console.log('Google LoginAttempt id:', row.id);
+    } catch (e) {
+      console.warn('Could not write Google LoginAttempt:', e.message);
+    }
+
+    const userInfo = { id: customer.id, email: customer.email, name: customer.name };
 
     const accessToken = sign(
       { id: customer.id, role: 'customer' },
@@ -94,11 +126,10 @@ router.post('/google-login', async (req, res) => {
 
     return res.json({ accessToken, user: userInfo });
   } catch (err) {
-    console.error('❌ Google login error:', err);
+    console.error('Google login error:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
 
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
@@ -187,58 +218,65 @@ router.post("/login", async (req, res) => {
 
     const errorMsg = "Email or password is not correct.";
     const customer = await Customer.findOne({ where: { email: data.email } });
-
     if (!customer || !(await bcrypt.compare(data.password, customer.password))) {
       return res.status(400).json({ message: errorMsg });
     }
 
     await Customer.increment('login_count', { where: { id: customer.id } });
 
+    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    if (ip.includes("::ffff:")) ip = ip.split("::ffff:")[1];
+    if (ip === '::1' || ip === '127.0.0.1') ip = '127.0.0.1';
+
     let location = "Unknown";
-    let ip = "Unknown";
     try {
-      const geoRes = await axios.get("https://ipapi.co/json/");
-      ip = geoRes.data.ip;
-      location = `${geoRes.data.city}, ${geoRes.data.region}, ${geoRes.data.country_name}`;
-    } catch (geoErr) {
-      console.warn("🌐 IPAPI lookup failed:", geoErr.message);
+      if (ip && ip !== '127.0.0.1') {
+        const geoRes = await axios.get(`https://ipapi.co/${ip}/json/`, { timeout: 1500 });
+        location = `${geoRes.data.city || 'Unknown'}, ${geoRes.data.region || 'Unknown'}, ${geoRes.data.country_name || 'Unknown'}`;
+      } else {
+        location = 'Localhost';
+      }
+    } catch (e) {
+      console.warn("IPAPI lookup failed:", e.message);
     }
+
     const device = req.headers['user-agent'] || "Unknown";
 
-   const previousLogin = await LoginAttempt.findOne({
-      where: { email: customer.email },
-      order: [['createdAt', 'DESC']]
-    });
+    let anomaly_score = 0;
+    try {
+      const previousLogin = await LoginAttempt.findOne({
+        where: { email: customer.email },
+        order: [['createdAt', 'DESC']]
+      });
+      const sameDevice = previousLogin?.device === device;
+      const sameIP = previousLogin?.ip === ip;
+      const sameLocation = previousLogin?.location === location;
+      anomaly_score = await classifyAnomaly({ sameDevice, sameIP, sameLocation });
+    } catch (e) {
+      console.warn("Anomaly scoring failed:", e.message);
+    }
 
-    const sameDevice = previousLogin?.device === device;
-    const sameIP = previousLogin?.ip === ip;
-    const sameLocation = previousLogin?.location === location;
+    try {
+      const row = await LoginAttempt.create({
+        email: customer.email,
+        ip,
+        location,
+        device,
+        anomaly_score
+      });
+      console.log("LoginAttempt inserted id:", row.id);
+    } catch (dbErr) {
+      console.error("Failed to insert LoginAttempt:", dbErr);
+      // continue, do not block user login
+    }
 
-    const anomaly_score = await classifyAnomaly({ sameDevice, sameIP, sameLocation });
+    const userInfo = { id: customer.id, email: customer.email, name: customer.name };
 
-    // ✅ Save login with AI score
-    await LoginAttempt.create({
-      email: customer.email,
-      ip,
-      location,
-      device,
-      anomaly_score
-    });
-
-    const userInfo = {
-    id: customer.id,
-    email: customer.email,
-    name: customer.name
-  };
-
-
-
-    // ✅ Continue login flow
-   const accessToken = sign(
-  { id: customer.id, role: 'customer' }, // ✅ Add role here
-  process.env.APP_SECRET,
-  { expiresIn: process.env.TOKEN_EXPIRES_IN }
-);
+    const accessToken = sign(
+      { id: customer.id, role: 'customer' },
+      process.env.APP_SECRET,
+      { expiresIn: process.env.TOKEN_EXPIRES_IN }
+    );
 
     res.json({ accessToken, user: userInfo });
   } catch (err) {
@@ -246,6 +284,7 @@ router.post("/login", async (req, res) => {
     res.status(400).json({ errors: err.errors || [err.message] });
   }
 });
+
 
 
 // ✅ Add this route for /customer/auth

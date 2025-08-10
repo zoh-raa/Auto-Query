@@ -25,11 +25,24 @@ import ProductPage from './pages/ProductPage';
 import PartDetailsPage from './pages/PartDetailsPage';
 import StaffRFQPage from './pages/StaffRFQPage';
 import StaffRFQEditPage from './pages/StaffRFQEditPage';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { bindNavigator } from "./https"; // adjust path if http.js is in a different folder
+
+function NavigatorBinder() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    bindNavigator(navigate);
+  }, [navigate]);
+  return null;
+}
 
 
 function App() {
+  
   return (
       <Router>
+        <NavigatorBinder />
         <UserProvider>
         <CartProvider>
         <ThemeProvider theme={MyTheme}>
