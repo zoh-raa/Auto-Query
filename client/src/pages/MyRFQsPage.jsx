@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import axios from '../https';
+import { http } from '../https';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import UserContext from '../contexts/UserContext';

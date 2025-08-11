@@ -18,7 +18,7 @@ const SecurityLogs = () => {
   const { user } = useContext(UserContext);
 
   useEffect(() => {
-    axios.get('http://localhost:3001/staff/security-logs', {
+    axios.get('http://localhost:5000/staff/security-logs', {
       headers: { Authorization: `Bearer ${localStorage.getItem('staffAccessToken')}` }
     })
       .then(res => setSecurityLogs(res.data))

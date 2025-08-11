@@ -8,7 +8,7 @@ const PartDetailsPage = () => {
   const [part, setPart] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:3001/staff/products/${productId}`, {
+    fetch(`http://localhost:5000/staff/products/${productId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
     })
       .then(res => res.json())
@@ -43,7 +43,7 @@ const PartDetailsPage = () => {
           {part.imageUrl ? (
             <Box
               component="img"
-              src={`http://localhost:3001/uploads/${part.imageUrl}`}
+              src={`http://localhost:5000/uploads/${part.imageUrl}`}
               alt={part.productName}
               sx={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 2 }}
             />

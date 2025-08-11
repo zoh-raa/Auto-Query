@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
     productId: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      // unique: true, // Temporarily commented out to avoid index conflicts
     },
     productNumber: {
       type: DataTypes.STRING,

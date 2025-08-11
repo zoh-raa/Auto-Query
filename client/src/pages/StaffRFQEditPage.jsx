@@ -8,7 +8,7 @@ import {
   Paper,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from '../https';
+import { http } from '../https';
 
 const StaffEditRFQPage = () => {
   const { id } = useParams();

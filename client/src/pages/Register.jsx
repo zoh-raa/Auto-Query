@@ -10,7 +10,7 @@ import {
 import { useNavigate } from 'react-router';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import http from '../https';
+import { http } from '../https';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'; // 👈 Customer icon
@@ -20,168 +20,128 @@ import { jwtDecode } from 'jwt-decode';
 function Register() {
   const navigate = useNavigate();
 
-  const formik = useFormik({
-    initialValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: ''
-    },
-    validationSchema: yup.object({
-      name: yup.string().trim()
-        .min(3, 'Name must be at least 3 characters')
-        .max(50, 'Name must be at most 50 characters')
-        .required('Name is required')
-        .matches(/^[a-zA-Z '-,.]+$/, "Only letters, spaces, and ' - , . are allowed"),
-      email: yup.string().trim()
-        .email('Enter a valid email')
-        .max(50, 'Email must be at most 50 characters')
-        .required('Email is required'),
-      password: yup.string().trim()
-        .min(8, 'Password must be at least 8 characters')
-        .max(50)
-        .required('Password is required')
-        .matches(/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$/, "Must contain at least 1 letter and 1 number"),
-      confirmPassword: yup.string().trim()
-        .required('Confirm password is required')
-        .oneOf([yup.ref('password')], 'Passwords must match')
-    }),
-    onSubmit: async (data) => {
-      console.log('📦 Register submitted:', data);
+    const formik = useFormik({
+        initialValues: {
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: ''
+        },
+        validationSchema: yup.object({
+            name: yup.string().trim()
+                .min(3, 'Name must be at least 3 characters')
+                .max(50, 'Name must be at most 50 characters')
+                .required('Name is required')
+                .matches(/^[a-zA-Z '-,.]+$/, "Name only allows letters, spaces, and ' - , ."),
+            email: yup.string().trim()
+                .email('Enter a valid email')
+                .max(50, 'Email must be at most 50 characters')
+                .required('Email is required'),
+            password: yup.string().trim()
+                .min(8, 'Password must be at least 8 characters')
+                .max(50, 'Password must be at most 50 characters')
+                .required('Password is required')
+                .matches(/^(?=.*[a-zA-Z])(?=.*[0-9]).{8,}$/, "Password must contain at least 1 letter and 1 number"),
+            confirmPassword: yup.string().trim()
+                .required('Confirm password is required')
+                .oneOf([yup.ref('password')], 'Passwords must match')
+        }),
+        onSubmit: async (data) => {
+            alert('Submitting register form');
+            console.log('📦 Register submitted:', data);
 
       data.name = data.name.trim();
       data.email = data.email.trim().toLowerCase();
       data.password = data.password.trim();
 
-      try {
-        const res = await http.post('/customer/register', data);
-        console.log('✅ Register response:', res.data);
-        toast.success('Registration successful!');
-        setTimeout(() => navigate('/'), 1500);
-      } catch (err) {
-        console.error('❌ Register error:', err);
-        toast.error(
-          err?.response?.data?.message ||
-          err?.response?.data?.errors?.[0] ||
-          'Something went wrong. Please try again.'
-        );
-      }
-    }
-  });
-
-  return (
-    <Box sx={{ backgroundColor: '#f4f6f9', minHeight: '100vh', py: 6 }}>
-      <Paper elevation={4} sx={{ maxWidth: 500, margin: '0 auto', p: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <PersonOutlineIcon sx={{ fontSize: 30, color: '#444', mr: 1 }} />
-          <Typography variant="h5" fontWeight="bold">
-            Customer Registration Portal
-          </Typography>
-        </Box>
-
-        <Typography variant="subtitle1" sx={{ mb: 2, color: 'gray' }}>
-          Welcome! This page is for new customers to register. If you're a staff member, please use the <strong>Staff Registration</strong> page instead.
-        </Typography>
-
-        <Divider sx={{ mb: 3 }} />
-
-        <Box component="form" onSubmit={formik.handleSubmit}>
-          <TextField
-            fullWidth margin="dense" autoComplete="off"
-            label="Name"
-            name="name"
-            value={formik.values.name}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.name && Boolean(formik.errors.name)}
-            helperText={formik.touched.name && formik.errors.name}
-          />
-          <TextField
-            fullWidth margin="dense" autoComplete="off"
-            label="Email"
-            name="email"
-            value={formik.values.email}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.email && Boolean(formik.errors.email)}
-            helperText={formik.touched.email && formik.errors.email}
-          />
-          <TextField
-            fullWidth margin="dense" autoComplete="off"
-            label="Password"
-            name="password"
-            type="password"
-            value={formik.values.password}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.password && Boolean(formik.errors.password)}
-            helperText={formik.touched.password && formik.errors.password}
-          />
-          <TextField
-            fullWidth margin="dense" autoComplete="off"
-            label="Confirm Password"
-            name="confirmPassword"
-            type="password"
-            value={formik.values.confirmPassword}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-            error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
-            helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
-          />
-          <Button
-  fullWidth
-  variant="contained"
-  type="submit"
-  sx={{
-    mt: 3,
-    backgroundColor: '#444444',
-    color: 'white',
-    '&:hover': {
-      backgroundColor: '#2c2c2c'
-    }
-  }}
->
-  Register
-</Button>
-
-<Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-  <GoogleLogin
-    onSuccess={async (credentialResponse) => {
-      const decoded = jwtDecode(credentialResponse.credential);
-      console.log("✅ Google register success:", decoded);
-
-      try {
-        const res = await http.post('/customer/google-register', {
-          name: decoded.name,
-          email: decoded.email,
-          googleId: decoded.sub,
-        });
-
-        localStorage.setItem('accessToken', res.data.accessToken);
-        toast.success('Registration successful!');
-        setTimeout(() => navigate('/customer/dashboard'), 1000);
-      } catch (err) {
-        if (err?.response?.status === 409) {
-          toast.error('This email is already registered. Please log in.');
-        } else {
-          console.error('❌ Google register error:', err);
-          toast.error('Something went wrong. Try again.');
+            try {
+                const res = await http.post('/customer/register', data);
+                console.log('✅ Register response:', res.data);
+                toast.success('Registration successful!');
+                setTimeout(() => navigate('/'), 1500); // 👈 Redirect to homepage after short delay
+            } catch (err) {
+                console.error('❌ Register error:', err);
+                toast.error(
+                    err?.response?.data?.message ||
+                    err?.response?.data?.errors?.[0] ||
+                    'Something went wrong. Please try again.'
+                );
+            }
         }
-      }
-    }}
-    onError={() => {
-      toast.error('Google registration failed.');
-    }}
-  />
-</Box>
+    });
 
+    return (
+        <Box sx={{
+            marginTop: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+        }}>
+            <Typography variant="h5" sx={{ my: 2 }}>
+                Register
+            </Typography>
+            <Box component="form" sx={{ maxWidth: '500px', width: '100%' }}
+                onSubmit={formik.handleSubmit}>
+                <TextField
+                    fullWidth margin="dense" autoComplete="off"
+                    label="Name"
+                    name="name"
+                    value={formik.values.name}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.name && Boolean(formik.errors.name)}
+                    helperText={formik.touched.name && formik.errors.name}
+                />
+                <TextField
+                    fullWidth margin="dense" autoComplete="off"
+                    label="Email"
+                    name="email"
+                    value={formik.values.email}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.email && Boolean(formik.errors.email)}
+                    helperText={formik.touched.email && formik.errors.email}
+                />
+                <TextField
+                    fullWidth margin="dense" autoComplete="off"
+                    label="Password"
+                    name="password" type="password"
+                    value={formik.values.password}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.password && Boolean(formik.errors.password)}
+                    helperText={formik.touched.password && formik.errors.password}
+                />
+                <TextField
+                    fullWidth margin="dense" autoComplete="off"
+                    label="Confirm Password"
+                    name="confirmPassword" type="password"
+                    value={formik.values.confirmPassword}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.confirmPassword && Boolean(formik.errors.confirmPassword)}
+                    helperText={formik.touched.confirmPassword && formik.errors.confirmPassword}
+                />
+                <Button
+                    fullWidth
+                    variant="contained"
+                    type="submit"
+                    sx={{
+                        mt: 2,
+                        backgroundColor: '#888',
+                        color: 'white',
+                        '&:hover': {
+                            backgroundColor: '#666'
+                        }
+                    }}
+                >
+                    Register
+                </Button>
+
+            </Box>
 
         </Box>
-      </Paper>
-
-      <ToastContainer />
-    </Box>
-  );
+    );
 }
 
 export default Register;

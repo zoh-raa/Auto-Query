@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useRef } from 'react';
 import { toast } from 'react-hot-toast';
-import http from '../https'; // ✅ your axios instance that includes token
+import { http } from '../https'; // ✅ your axios instance that includes token
 
 export const CartContext = createContext();
 

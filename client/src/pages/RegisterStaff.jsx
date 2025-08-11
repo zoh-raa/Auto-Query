@@ -56,7 +56,7 @@ function RegisterStaff() {
           role: data.role
         };
 
-        const res = await axios.post('http://localhost:3001/staff/register', payload);
+        const res = await axios.post('http://localhost:5000/staff/register', payload);
         toast.success(res.data.message || 'Staff registered successfully!');
         localStorage.setItem("accessToken", res.data.accessToken);
         navigate('/');

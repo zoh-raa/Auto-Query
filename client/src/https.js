@@ -6,6 +6,11 @@ const instance = axios.create({
   withCredentials: true
 });
 
+const http = axios.create({
+  baseURL: 'http://localhost:5000', // <-- Make sure this matches your backend port
+  withCredentials: true, // if you use cookies/auth
+});
+
 // expose a way to bind navigate from App.jsx
 let navigateRef = null;
 export const bindNavigator = (navigate) => { navigateRef = navigate; };
@@ -32,4 +37,4 @@ instance.interceptors.response.use(
   }
 );
 
-export default instance;
+export { instance, http };

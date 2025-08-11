@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import UserContext from '../contexts/UserContext';
-import axios from '../https';
+import { http } from '../https';
 
 const StaffRFQPage = () => {
   const { user, loading } = useContext(UserContext);

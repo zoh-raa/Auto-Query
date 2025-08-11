@@ -32,7 +32,7 @@ const CreateProductPage = () => {
   }, [tab]);
 
   const fetchParts = () => {
-    fetch('http://localhost:3001/staff/products', {
+    fetch('http://localhost:5000/staff/products', {
       headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
     })
       .then(res => res.json())
@@ -60,7 +60,7 @@ const CreateProductPage = () => {
     for (const key in formData) {
       data.append(key, formData[key]);
     }
-    fetch('http://localhost:3001/staff/products', {
+    fetch('http://localhost:5000/staff/products', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${localStorage.getItem('accessToken')}`
@@ -92,7 +92,7 @@ const CreateProductPage = () => {
   const handleDelete = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this part?')) return;
     try {
-      const res = await fetch(`http://localhost:3001/staff/products/${productId}`, {
+      const res = await fetch(`http://localhost:5000/staff/products/${productId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`

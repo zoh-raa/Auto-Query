@@ -36,7 +36,7 @@ function StaffLogin() {
           password: data.password.trim()
         };
 
-        const res = await axios.post('http://localhost:3001/staff/login', payload);
+    const res = await axios.post('http://localhost:3001/staff/login', payload);
 
         const staffUser = {
           name: res.data.user.name || "Staff",

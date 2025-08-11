@@ -12,7 +12,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import toast from 'react-hot-toast';
-import axios from '../https';
+import { http } from '../https';
 import { CartContext } from '../contexts/CartContext';
 import UserContext from '../contexts/UserContext';
 

@@ -1,7 +1,7 @@
 import './App.css';
 import MyAppBar from './components/MyAppBar';
 import { Container } from '@mui/material';
-import { BrowserRouter as Router, Routes, Route } from 'react-router';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';  // Fixed the import for react-router-dom
 import { ThemeProvider } from '@mui/material/styles';
 import MyTheme from './themes/MyTheme';
 import { Toaster } from 'react-hot-toast'; // ✅ Import toaster
@@ -37,6 +37,7 @@ function NavigatorBinder() {
   return null;
 }
 
+import SearchResults from './pages/SearchResults'; // Ensure this is imported correctly
 
 function App() {
   
@@ -68,6 +69,7 @@ function App() {
               <Route path="/my-rfqs" element={<MyRFQsPage />} />
               <Route path="/staff/rfqs/edit/:id" element={<StaffRFQEditPage/>}/>
               <Route path="/staff/rfqs" element={<StaffRFQPage/>}/>
+              <Route path="/search" element={<SearchResults />} />
               
               
             </Routes>

@@ -10,7 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
-import http from '../https';
+import { http } from '../https';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import UserContext from '../contexts/UserContext';

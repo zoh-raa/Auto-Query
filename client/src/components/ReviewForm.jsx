@@ -13,6 +13,7 @@ export default function ReviewForm({ initialData = {}, onSave, onCancel }) {
         const review = {
             id: initialData.id,
             name: user.name,
+            email: user.email,
             rating,
             text,
             createdAt: new Date().toISOString(),
@@ -34,8 +35,8 @@ export default function ReviewForm({ initialData = {}, onSave, onCancel }) {
             <label>
                 Your Review:
                 <textarea
-                    name="text"
-                    defaultValue={editingReview?.text || ""}
+                    value={text}
+                    onChange={e => setText(e.target.value)}
                     placeholder="Write your review here (min 10 characters)..."
                     minLength={10}
                     required

@@ -59,8 +59,9 @@ function MyAppBar() {
     if (e.key === "Enter") {
       const keyword = e.target.value.trim();
       if (keyword) {
-        alert(`Searching for: ${keyword}`);
-        e.target.value = "";
+        // Navigate to the search results or part detail page
+        navigate(`/search?query=${keyword}`);  // Direct user to search results page with the query
+        e.target.value = "";  // Clear the search input
       }
     }
   };
@@ -100,7 +101,7 @@ function MyAppBar() {
           </Button>
         </Box>
 
-        {/* Middle: Search */}
+        {/* Middle: Search Bar */}
         <Search>
           <SearchIconWrapper>
             <SearchIcon />
@@ -108,11 +109,11 @@ function MyAppBar() {
           <StyledInputBase
             placeholder="Search part # / vehicle / VIN"
             inputProps={{ 'aria-label': 'search' }}
-            onKeyDown={handleSearch}
+            onKeyDown={handleSearch}  // Trigger the handleSearch function on pressing Enter
           />
         </Search>
 
-        {/* Right: Auth */}
+        {/* Right Section: Auth */}
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           {user ? (
             <>

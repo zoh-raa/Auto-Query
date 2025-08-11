@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from "react";
-import http from "../https";
+import { http } from "../https";
 
 
 const UserContext = createContext({

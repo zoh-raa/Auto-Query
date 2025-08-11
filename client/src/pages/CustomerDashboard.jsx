@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UserContext from '../contexts/UserContext';
-import http from '../https';
+import { http } from '../https';
 
 import {
   Box,
