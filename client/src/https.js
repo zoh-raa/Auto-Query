@@ -7,7 +7,7 @@ const instance = axios.create({
 });
 
 const http = axios.create({
-  baseURL: 'http://localhost:5000', // <-- Make sure this matches your backend port
+  baseURL: 'http://localhost:3001', // <-- Make sure this matches your backend port
   withCredentials: true, // if you use cookies/auth
 });
 
@@ -37,4 +37,6 @@ instance.interceptors.response.use(
   }
 );
 
-export { instance, http };
+export default http;
+export { instance, http }; // ✅ now http is available as a named export too
+
