@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const { Customer } = require('../models');
+const { Customer, PasswordResetOtp} = require('../models');
 const yup = require("yup");
 const { sign } = require('jsonwebtoken');
 const { validateToken } = require('../middlewares/auth');
@@ -10,6 +10,11 @@ const { LoginAttempt } = require('../models');
 const axios = require('axios'); // if not already
 // ✅ Claude-based anomaly scoring
 const classifyAnomaly = require('../utils/anomalyClassifier'); // at top of file
+const jwt = require('jsonwebtoken');
+const { sendMail } = require('../utils/mailer');
+const OTP_TTL_MIN = parseInt(process.env.RESET_OTP_TTL_MINUTES || '10', 10);
+const makeOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
 
 
 router.get('/login-history/:id', async (req, res) => {
@@ -282,6 +287,170 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     console.error("Login error:", err);
     res.status(400).json({ errors: err.errors || [err.message] });
+  }
+});
+
+
+// Step 1. Request OTP
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await Customer.findOne({ where: { email } });
+
+    // Always respond 200 to avoid user enumeration
+    if (user) {
+      const otp = makeOtp();
+      const otp_hash = await bcrypt.hash(otp, 10);
+      const expires_at = new Date(Date.now() + OTP_TTL_MIN * 60 * 1000);
+      await PasswordResetOtp.create({ email, otp_hash, expires_at });
+
+      // ✅ Console log for dev testing
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[PWD-RESET] OTP for ${email}: ${otp} (expires in ${OTP_TTL_MIN}m)`);
+      }
+
+      try {
+        await sendMail({
+          to: email,
+          subject: 'Your AMS password reset code',
+          text: `Your one time code is ${otp}. It expires in ${OTP_TTL_MIN} minutes.`,
+          html: `<p>Your one time code is <b>${otp}</b>.</p><p>This code expires in ${OTP_TTL_MIN} minutes.</p>`
+        });
+      } catch (e) {
+        console.warn('sendMail failed:', e.message);
+      }
+    }
+
+    return res.json({ ok: true, message: 'If the email exists, an OTP has been sent.' });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+
+/**
+ * Step 2. Verify OTP returns short lived reset token
+ */
+router.post('/verify-otp', async (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const otp = String(req.body.otp || '').trim();
+    if (!email || !otp) return res.status(400).json({ message: 'Email and OTP are required' });
+
+    const record = await PasswordResetOtp.findOne({
+      where: { email, used: false },
+      order: [['createdAt', 'DESC']]
+    });
+    if (!record) return res.status(400).json({ message: 'Invalid or expired code' });
+
+    if (record.expires_at < new Date()) return res.status(400).json({ message: 'Code expired' });
+
+    if (record.attempts >= 5) return res.status(429).json({ message: 'Too many attempts. Request a new code.' });
+
+    const ok = await bcrypt.compare(otp, record.otp_hash);
+    if (!ok) {
+      record.attempts += 1;
+      await record.save();
+      return res.status(400).json({ message: 'Incorrect code' });
+    }
+
+    // Sign a short reset token
+    const resetToken = jwt.sign(
+      { email, otpId: record.id, typ: 'pwdreset' },
+      process.env.APP_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    return res.json({ ok: true, resetToken });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * Step 3. Reset password
+ */
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { resetToken, newPassword, confirmPassword } = req.body;
+    if (!resetToken) return res.status(400).json({ message: 'Missing token' });
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
+    let payload;
+    try {
+      payload = jwt.verify(resetToken, process.env.APP_SECRET);
+    } catch {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+
+    const otpRec = await PasswordResetOtp.findByPk(payload.otpId);
+    if (!otpRec || otpRec.used || otpRec.email !== payload.email) {
+      return res.status(400).json({ message: 'Invalid reset request' });
+    }
+
+    const user = await Customer.findOne({ where: { email: payload.email } });
+    if (!user) return res.status(400).json({ message: 'Invalid reset request' });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    otpRec.used = true;
+    await otpRec.save();
+
+    // Notify user that password changed, include quick lock link
+    const lockToken = jwt.sign(
+      { email: user.email, typ: 'lock' },
+      process.env.APP_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    const lockUrl = `https://your-frontend.example.com/lock-account?token=${lockToken}`;
+
+    await sendMail({
+      to: user.email,
+      subject: 'Your AMS password was changed',
+      html: `
+        <p>Your password was changed successfully.</p>
+        <p>If this was you, you can ignore this email.</p>
+        <p>If this was not you, <a href="${lockUrl}">lock your account immediately</a>.</p>
+      `
+    });
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * Optional. Lock account endpoint used by email link
+ */
+router.post('/lock-account', async (req, res) => {
+  try {
+    const { token } = req.body;
+    const payload = jwt.verify(token, process.env.APP_SECRET);
+    if (payload.typ !== 'lock') return res.status(400).json({ message: 'Bad token' });
+
+    const user = await Customer.findOne({ where: { email: payload.email } });
+    if (!user) return res.status(400).json({ message: 'User not found' });
+
+    user.is_locked = true; // add this field to Customer if you want
+    await user.save();
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    return res.status(400).json({ message: 'Invalid or expired token' });
   }
 });
 

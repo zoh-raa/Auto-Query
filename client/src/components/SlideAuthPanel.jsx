@@ -7,10 +7,13 @@ import CustomerLogin from '../pages/Login';
 import CustomerRegister from '../pages/Register';
 import StaffLogin from '../pages/StaffLogin';
 import StaffRegister from '../pages/RegisterStaff';
+import ForgotPasswordFlow from '../components/ForgotPasswordFlow';
+
 
 const SlideAuthPanel = ({ open, onClose }) => {
   const [role, setRole] = useState('customer'); // 'customer' or 'staff'
   const [tab, setTab] = useState(0); // 0 = Login, 1 = Register
+  const [mode, setMode] = useState('auth');
 
   const handleRoleChange = (event, newRole) => {
     if (newRole !== null) setRole(newRole);
@@ -21,56 +24,70 @@ const SlideAuthPanel = ({ open, onClose }) => {
   };
 
   const renderForm = () => {
+    if (mode === 'forgot') {
+      return (
+        <ForgotPasswordFlow onBack={() => setMode('auth')} />
+      );
+    }
+
     if (role === 'customer') {
-      return tab === 0 ? <CustomerLogin /> : <CustomerRegister />;
+      return tab === 0
+        ? <CustomerLogin onForgot={() => setMode('forgot')} />
+        : <CustomerRegister />;
     } else {
-      return tab === 0 ? <StaffLogin /> : <StaffRegister />;
+      return tab === 0
+        ? <StaffLogin />
+        : <StaffRegister />;
     }
   };
 
   return (
-    <Dialog
-    open={open}
-    onClose={onClose}
-    fullScreen // ✅ Makes it full-height
-    TransitionComponent={Slide}
-    TransitionProps={{ direction: "left" }}
-    sx={{
+     <Dialog
+      open={open}
+      onClose={() => { setMode('auth'); onClose?.(); }}
+      fullScreen
+      TransitionComponent={Slide}
+      TransitionProps={{ direction: 'left' }}
+      sx={{
         '& .MuiDialog-paper': {
-        width: '450px',         // ✅ Fixed width for the panel
-        maxWidth: '90vw',
-        height: '100vh',        // ✅ Full vertical height
-        marginLeft: 'auto',     // ✅ Pushes it to the right
-        borderRadius: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        }
-    }}
+          width: '450px',
+          maxWidth: '90vw',
+          height: '100vh',
+          marginLeft: 'auto',
+          borderRadius: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
     >
-
-      {/* Header: Close Button */}
+      {/* Header */}
       <Box display="flex" justifyContent="flex-end" p={1}>
-        <IconButton onClick={onClose}><CloseIcon /></IconButton>
+        <IconButton onClick={() => { setMode('auth'); onClose?.(); }}>
+          <CloseIcon />
+        </IconButton>
       </Box>
 
-      {/* Role Selector */}
-      <ToggleButtonGroup
-        value={role}
-        exclusive
-        onChange={handleRoleChange}
-        sx={{ alignSelf: 'center', mb: 2 }}
-      >
-        <ToggleButton value="customer">Customer</ToggleButton>
-        <ToggleButton value="staff">Staff</ToggleButton>
-      </ToggleButtonGroup>
+      {/* Hide role and tabs when in forgot mode to keep the flow focused */}
+      {mode !== 'forgot' && (
+        <>
+          <ToggleButtonGroup
+            value={role}
+            exclusive
+            onChange={handleRoleChange}
+            sx={{ alignSelf: 'center', mb: 2 }}
+          >
+            <ToggleButton value="customer">Customer</ToggleButton>
+            <ToggleButton value="staff">Staff</ToggleButton>
+          </ToggleButtonGroup>
 
-      {/* Tab Selector */}
-      <Tabs value={tab} onChange={handleTabChange} centered>
-        <Tab label="Login" />
-        <Tab label="Sign Up" />
-      </Tabs>
+          <Tabs value={tab} onChange={(_e, v) => setTab(v)} centered>
+            <Tab label="Login" />
+            <Tab label="Sign Up" />
+          </Tabs>
+        </>
+      )}
 
-      {/* Form Content */}
+      {/* Body */}
       <Box p={3} flex={1} overflow="auto">
         {renderForm()}
       </Box>

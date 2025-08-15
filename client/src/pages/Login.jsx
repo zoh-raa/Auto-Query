@@ -18,7 +18,8 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode'; // ✅ Correct
 
-function Login() {
+
+function Login({ onForgot }) {
   const navigate = useNavigate();
   const { user, setUser } = useContext(UserContext);
 
@@ -122,6 +123,14 @@ function Login() {
           >
             Login
           </Button>
+
+          <Button
+          variant="text"
+          onClick={(e) => { e.preventDefault(); onForgot?.(); }}
+        >
+          Forgot your password?
+        </Button>
+
 
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
             <GoogleLogin

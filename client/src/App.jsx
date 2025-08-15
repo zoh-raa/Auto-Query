@@ -28,6 +28,7 @@ import StaffRFQEditPage from './pages/StaffRFQEditPage';
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { bindNavigator } from "./https"; // adjust path if http.js is in a different folder
+import ForgotPassword from './pages/ForgotPassword';
 
 function NavigatorBinder() {
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/register-staff" element={<RegisterStaff />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/rfq-form" element={<RFQFormPage />} />
               <Route path="/staff/login" element={<StaffLogin />} />

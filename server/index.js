@@ -57,13 +57,19 @@ app.use('/reviews', reviewRoute);
 
 // Database sync & server start
 const db = require('./models');
-const { Customer, Review, Product } = db; // ⬅️ sync these models
+const { Customer, Review, LoginAttempt, Staff, Cart, Product, RFQ, RFQItem, PasswordResetOtp } = db; // ⬅️ only sync these (skip Staff)
 
 (async () => {
   try {
     await Customer.sync({ alter: true });
     await Review.sync({ alter: true }); // optional: only if your Review model changed
-    await Product.sync(); // Remove alter: true to avoid index conflicts
+    await LoginAttempt.sync({ alter: true }); // ✅ add this line
+    await Staff.sync({ alter: true });
+    await Cart.sync({ alter: true });
+    await Product.sync({ alter: true });
+    await RFQ.sync({ alter: true });
+    await RFQItem.sync({ alter: true });
+    await PasswordResetOtp.sync({ alter: true });
 
     const port = process.env.APP_PORT || 5000;
     app.listen(port, () => {
