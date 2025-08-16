@@ -48,9 +48,58 @@
 .frequently-bought-section {
   background-color: #2d2d2d;
   color: white;
-  padding: 30px;
-  border-radius: 12px;
-  margin-top: 60px;
+  padding: 30px 20px;
+  margin: 30px 0;
+  border-radius: 10px;
+}
+
+/* Clickable product styles */
+.clickable-product {
+  position: relative;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.clickable-product:hover {
+  border-color: #4CAF50;
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+  cursor: pointer;
+}
+
+.product-price {
+  font-weight: bold;
+  color: #e74c3c;
+  font-size: 16px;
+  margin: 8px 0;
+}
+
+.add-single-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  margin: 5px 0;
+  transition: background-color 0.2s ease;
+  width: 80%;
+}
+
+.add-single-btn:hover {
+  background-color: #45a049;
+  transform: translateY(-1px);
+}
+
+/* Clickable Brand Styles */
+.clickable-brand {
+  transition: all 0.3s ease;
+}
+
+.clickable-brand:hover {
+  transform: scale(1.05) !important;
 }
 
 .section-title {

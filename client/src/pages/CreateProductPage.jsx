@@ -58,39 +58,37 @@ const CreateProductPage = () => {
 
   // upload after confirmation
   const handleSubmit = () => {
-  const data = new FormData();
-  for (const key in formData) {
-    data.append(key, formData[key]);
-  }
-
-  let url = 'http://localhost:3001/staff/products';
-  let method = 'POST';
-
-  if (isEditing && editingProductId) {
-    url = `http://localhost:3001/staff/products/${editingProductId}`;
-    method = 'PUT'; // or PATCH depending on your backend
-  }
-
-  fetch(url, {
-    method,
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-    },
-    body: data,
-  })
-    .then(res => res.json())
-    .then(result => {
-      alert(isEditing ? 'Product Updated!' : 'Product Created!');
-      setFormData({ productName:'', productId:'', productNumber:'', productDescription:'', image:null, quantity:'', productBrand:'', price:'' });
-      setIsEditing(false);
-      setEditingProductId(null);
-      setConfirmOpen(false);
-      fetchParts();
+    const data = new FormData();
+    for (const key in formData) {
+      data.append(key, formData[key]);
+    }
+    fetch('http://localhost:5000/staff/products', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+      },
+      body: data
     })
-    .catch(err => {
-      alert('Failed to save product');
-      setConfirmOpen(false);
-    });
+      .then(res => res.json())
+      .then(result => {
+        alert('Product Created!');
+        setFormData({
+          productName: '',
+          productId: '',
+          productNumber: '',
+          productDescription: '',
+          image: null,
+          quantity: '',
+          productBrand: '',   // <-- add this
+          price: ''           // <-- add this
+        });
+        setConfirmOpen(false);
+        fetchParts();
+      })
+      .catch(err => {
+        alert('Failed to create product');
+        setConfirmOpen(false);
+      });
   };
 
   const handleDelete = async (productId) => {

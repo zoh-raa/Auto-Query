@@ -107,7 +107,7 @@ function MyAppBar() {
             <SearchIcon />
           </SearchIconWrapper>
           <StyledInputBase
-            placeholder="Search part # / vehicle / VIN"
+            placeholder="Search part name"
             inputProps={{ 'aria-label': 'search' }}
             onKeyDown={handleSearch}  // Trigger the handleSearch function on pressing Enter
           />

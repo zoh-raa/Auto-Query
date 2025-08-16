@@ -15,6 +15,29 @@ const http = axios.create({
 let navigateRef = null;
 export const bindNavigator = (navigate) => { navigateRef = navigate; };
 
+// Add Authorization header to http instance as well
+http.interceptors.request.use((config) => {
+  const accessToken = localStorage.getItem("accessToken");
+  if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  if (config.data && config.data.user) delete config.data.user;
+  return config;
+});
+
+instance.interceptors.request.use((config) => {
+  const accessToken = localStorage.getItem("accessToken");
+  if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  if (config.data && config.data.user) delete config.data.user;
+  return config;
+});
+
+// Add Authorization header to http instance as well
+http.interceptors.request.use((config) => {
+  const accessToken = localStorage.getItem("accessToken");
+  if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+  if (config.data && config.data.user) delete config.data.user;
+  return config;
+});
+
 instance.interceptors.request.use((config) => {
   const accessToken = localStorage.getItem("accessToken");
   if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;

@@ -60,14 +60,20 @@ const ProductPage = () => {
                 onClick={() => navigate(`/parts/${part.productId}`)}
                 elevation={4}
               >
-                {part.imageUrl && (
-                  <Box
-                    component="img"
-                    src={`http://localhost:3001/uploads/${part.imageUrl}`}
-                    alt={part.productName}
-                    sx={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 2, mb: 2 }}
-                  />
-                )}
+                <Box
+                  component="img"
+                  src={
+                    part.imageUrl
+                      ? part.imageUrl.startsWith('/images/')
+                        ? part.imageUrl
+                        : `http://localhost:3001/images/${part.imageUrl}`
+                      : part.image && (part.image.startsWith('http') || part.image.startsWith('/'))
+                        ? part.image
+                        : '/images/no-image.png'
+                  }
+                  alt={part.productName}
+                  sx={{ width: '100%', height: 180, objectFit: 'contain', borderRadius: 2, mb: 2 }}
+                />
                 <Typography variant="h6">{part.productName}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   SGD {Number(part.price).toFixed(2)}

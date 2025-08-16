@@ -63,15 +63,14 @@ const SearchResults = () => {
     };
 
     return (
-        <div style={{ padding: '20px' }}>
+        <div>
             <h1>Search Results for "{query}"</h1>
-            
             {loading ? (
                 <p>Loading...</p>
             ) : errorMessage ? (
                 <p style={{ color: 'red' }}>{errorMessage}</p>
             ) : results.length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', padding: '20px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
                     {results.map((result, index) => (
                         <div key={index} style={{ 
                             border: '1px solid #ddd', 
@@ -81,19 +80,27 @@ const SearchResults = () => {
                             boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                         }}>
                             <h2 style={{ color: '#333', marginBottom: '10px' }}>{result.productName}</h2>
-                            {result.imageUrl && (
-                                <img 
-                                    src={`http://localhost:3001${result.imageUrl}`} 
-                                    alt={result.productName}
-                                    style={{ 
-                                        width: '100%', 
-                                        height: '200px', 
-                                        objectFit: 'cover', 
-                                        borderRadius: '4px',
-                                        marginBottom: '10px'
-                                    }}
-                                />
-                            )}
+                            <img
+                                src={
+                                    result.imageUrl
+                                        ? result.imageUrl.startsWith('/images/')
+                                            ? result.imageUrl // Use as-is for /images/ paths
+                                            : `http://localhost:3001/images/${result.imageUrl}`
+                                        : result.image
+                                            ? result.image.startsWith('http') || result.image.startsWith('/')
+                                                ? result.image
+                                                : `/images/${result.image}`
+                                            : '/images/no-image.png'
+                                }
+                                alt={result.productName}
+                                style={{
+                                    width: '100%',
+                                    height: '200px',
+                                    objectFit: 'contain',
+                                    borderRadius: '4px',
+                                    marginBottom: '10px'
+                                }}
+                            />
                             <p style={{ color: '#666', marginBottom: '10px' }}>{result.productDescription}</p>
                             <p style={{ 
                                 fontSize: '20px', 

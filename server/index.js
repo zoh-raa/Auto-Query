@@ -18,9 +18,12 @@ app.use(express.static('public'));
 
 // Enable CORS
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'], // Allow multiple origins
-  credentials: true
+    origin: ['http://localhost:3000', 'http://localhost:3003'], // Allow both common ports
+    credentials: true
 }));
+
+// API routes
+
 
 // Simple Route
 app.get("/", (req, res) => {
@@ -34,12 +37,15 @@ app.use('/images', express.static('../client/images')); // Serve client images
 // Load Routes
 const customerRoute = require('./routes/customer');
 const fileRoute = require('./routes/file');
-const reviewRoute = require('./routes/review'); // corrected route
+const reviewRoute = require('./routes/review.route'); // use full CRUD route
 const staffRoute = require('./routes/staff');
+const staffProductsRoute = require('./routes/products');
 const rfqRoute = require('./routes/rfq');
 const cartRoutes = require('./routes/cart');
-const productRoute = require('./routes/product'); // pick the correct one
+const productRoute = require('./routes/product.route'); // use the correct product route with search
 const deliveryRoute = require('./routes/delivery');
+
+const aiRecommendRoute = require('./routes/aiRecommend');
 const chatbotRoute = require('./routes/chatbot');
 
 // Register routes
@@ -47,9 +53,12 @@ app.use('/customer', customerRoute);
 app.use('/file', fileRoute);
 app.use('/review', reviewRoute);
 app.use('/staff', staffRoute);
+app.use('/staff/products', staffProductsRoute);
 app.use('/rfq', rfqRoute);
 app.use('/cart', cartRoutes);
 app.use('/product', productRoute);
+
+app.use('/ai', aiRecommendRoute);
 app.use('/api/chatbot', chatbotRoute);
 app.use('/api/delivery', deliveryRoute);
 
