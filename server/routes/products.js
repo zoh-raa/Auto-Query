@@ -108,4 +108,18 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+/**
+ * @route GET /staff/products/:productId
+ * @desc Get details for a single product
+ */
+router.get("/:productId", async (req, res) => {
+  try {
+    const product = await Product.findOne({ where: { productId: req.params.productId } });
+    if (!product) return res.status(404).json({ error: "Product not found" });
+    res.json(product);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 module.exports = router;
