@@ -9,7 +9,7 @@ const PartDetailsPage = () => {
   const [part, setPart] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/staff/products/${productId}`, {
+    fetch(`http://localhost:3001/staff/products/${productId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
     })
       .then(res => res.json())
@@ -44,7 +44,7 @@ const PartDetailsPage = () => {
           {part.imageUrl ? (
             <Box
               component="img"
-              src={`http://localhost:5000/uploads/${part.imageUrl}`}
+              src={`http://localhost:3001/uploads/${part.imageUrl}`}
               alt={part.productName}
               sx={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 2 }}
             />
@@ -89,17 +89,7 @@ const PartDetailsPage = () => {
           <Divider sx={{ my: 2 }} />
           <Typography variant="body1" fontWeight={700} sx={{ mb: 1 }}>
             SGD ${Number(part.price).toFixed(2)}
-          </Typography>       
-          
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ mt: 2, fontWeight: 700, fontSize: 16 }}
-            onClick={() => alert('Added to cart!')}
-          >
-            Add to Cart
-          </Button>
+          </Typography>
         </Paper>
       </Stack>
     </Box>

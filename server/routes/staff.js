@@ -10,6 +10,10 @@ const axios = require('axios'); // ✅ Import this if not already
 const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
 const { LoginAttempt } = require('../models'); // ✅ Required for /security-logs
 
+// ensures staff-only product management
+// mounts my products.js under your staff.js so that uploads call staff/products
+const productsRoute = require("./products");
+router.use("/products", productsRoute);
 
 router.post('/register', async (req, res) => {
   const { staff_id, email, password, name, role } = req.body;

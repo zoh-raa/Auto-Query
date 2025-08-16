@@ -25,6 +25,8 @@ const CreateProductPage = () => {
   });
   const [parts, setParts] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
 
   // Fetch all parts when Edit/Delete tab is active or after creation
   useEffect(() => {
@@ -32,7 +34,7 @@ const CreateProductPage = () => {
   }, [tab]);
 
   const fetchParts = () => {
-    fetch('http://localhost:5000/staff/products', {
+    fetch('http://localhost:3001/staff/products', {
       headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
     })
       .then(res => res.json())
@@ -54,45 +56,47 @@ const CreateProductPage = () => {
     setConfirmOpen(true);
   };
 
-  // Actually upload after confirmation
+  // upload after confirmation
   const handleSubmit = () => {
-    const data = new FormData();
-    for (const key in formData) {
-      data.append(key, formData[key]);
-    }
-    fetch('http://localhost:5000/staff/products', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-      },
-      body: data
+  const data = new FormData();
+  for (const key in formData) {
+    data.append(key, formData[key]);
+  }
+
+  let url = 'http://localhost:3001/staff/products';
+  let method = 'POST';
+
+  if (isEditing && editingProductId) {
+    url = `http://localhost:3001/staff/products/${editingProductId}`;
+    method = 'PUT'; // or PATCH depending on your backend
+  }
+
+  fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+    },
+    body: data,
+  })
+    .then(res => res.json())
+    .then(result => {
+      alert(isEditing ? 'Product Updated!' : 'Product Created!');
+      setFormData({ productName:'', productId:'', productNumber:'', productDescription:'', image:null, quantity:'', productBrand:'', price:'' });
+      setIsEditing(false);
+      setEditingProductId(null);
+      setConfirmOpen(false);
+      fetchParts();
     })
-      .then(res => res.json())
-      .then(result => {
-        alert('Product Created!');
-        setFormData({
-          productName: '',
-          productId: '',
-          productNumber: '',
-          productDescription: '',
-          image: null,
-          quantity: '',
-          productBrand: '',   // <-- add this
-          price: ''           // <-- add this
-        });
-        setConfirmOpen(false);
-        fetchParts();
-      })
-      .catch(err => {
-        alert('Failed to create product');
-        setConfirmOpen(false);
-      });
+    .catch(err => {
+      alert('Failed to save product');
+      setConfirmOpen(false);
+    });
   };
 
   const handleDelete = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this part?')) return;
     try {
-      const res = await fetch(`http://localhost:5000/staff/products/${productId}`, {
+      const res = await fetch(`http://localhost:3001/staff/products/${productId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('accessToken')}`
@@ -121,10 +125,10 @@ const CreateProductPage = () => {
             <Paper key={part.productId} sx={{ p: 2, mb: 2 }}>
               <Typography fontWeight="bold">{part.productName}</Typography>
               <Typography variant="body2">Reference Number: {part.productId}</Typography>
-              <Typography variant="body2">Brand: {part.productBrand}</Typography> {/* <-- Add this */}
+              <Typography variant="body2">Brand: {part.productBrand}</Typography>
               <Typography variant="body2">Catalog Number: {part.productNumber}</Typography>
               <Typography variant="body2">Quantity: {part.quantity}</Typography>
-              <Typography variant="body2">Price: {part.price}</Typography> {/* <-- Add this */}
+              <Typography variant="body2">Price: {part.price}</Typography>
               <Typography variant="body2">{part.productDescription}</Typography>
               <Box mt={2} display="flex" gap={1}>
                 <Button
@@ -139,9 +143,11 @@ const CreateProductPage = () => {
                       productDescription: part.productDescription,
                       image: null,
                       quantity: part.quantity,
-                      productBrand: part.productBrand, // <-- Add this
-                      price: part.price // <-- Add this
+                      productBrand: part.productBrand,
+                      price: part.price
                     });
+                    setIsEditing(true);
+                    setEditingProductId(part.productId);
                     setTab(0);
                   }}
                 >

@@ -1,17 +1,44 @@
-const express = require('express');
-const router = express.Router();
-const multer = require('multer');
-const { Product } = require('../models');
-const upload = multer({ dest: 'uploads/' });
+// routes/products.js
 
-// POST /staff/products
-router.post('/', upload.single('image'), async (req, res) => {
+const express = require("express");
+const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const { Product } = require("../models");
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // make sure /uploads folder exists
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+/**
+ * @route GET /staff/products
+ * @desc Fetch all products
+ */
+router.get("/", async (req, res) => {
+  try {
+    const products = await Product.findAll();
+    res.json(products);
+  } catch (err) {
+    console.error("❌ Error fetching products:", err);
+    res.status(500).json({ message: "Failed to fetch products" });
+  }
+});
+
+/**
+ * @route POST /staff/products
+ * @desc Create a new product
+ */
+router.post("/", upload.single("image"), async (req, res) => {
   try {
     const { productName, productId, productNumber, productDescription, quantity, productBrand, price } = req.body;
-
-    if (!productName || !productId || !productNumber || !productDescription || !quantity || !productBrand || !price) {
-      return res.status(400).json({ message: 'Missing fields' });
-    }
 
     const newProduct = await Product.create({
       productName,
@@ -21,46 +48,63 @@ router.post('/', upload.single('image'), async (req, res) => {
       quantity,
       productBrand,
       price,
-      imageUrl: req.file ? req.file.filename : null
+      imageUrl: req.file ? req.file.filename : null,
     });
 
-    res.status(201).json({ message: 'Product saved', product: newProduct });
+    res.status(201).json(newProduct);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Database error' });
+    console.error("❌ Error creating product:", err);
+    res.status(500).json({ message: "Failed to create product" });
   }
 });
 
-// GET /staff/products
-router.get('/', async (req, res) => {
+/**
+ * @route PUT /staff/products/:id
+ * @desc Update an existing product by productId
+ */
+router.put("/:id", upload.single("image"), async (req, res) => {
   try {
-    const products = await Product.findAll();
-    res.json(products);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to fetch products' });
-  }
-});
+    const { id } = req.params; // <-- productId from URL
 
-// GET /staff/products/:productId
-router.get('/:productId', async (req, res) => {
-  try {
-    const product = await Product.findOne({ where: { productId: req.params.productId } });
-    if (!product) return res.status(404).json({ message: 'Not found' });
+    const product = await Product.findOne({ where: { productId: id } });
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    await product.update({
+      productName: req.body.productName,
+      productNumber: req.body.productNumber,
+      productDescription: req.body.productDescription,
+      quantity: req.body.quantity,
+      productBrand: req.body.productBrand,
+      price: req.body.price,
+      imageUrl: req.file ? req.file.filename : product.imageUrl, // keep old image if not replaced
+    });
+
     res.json(product);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch product' });
+    console.error("❌ Error updating product:", err);
+    res.status(500).json({ message: "Failed to update product" });
   }
 });
 
-// DELETE /staff/products/:productId
-router.delete('/:productId', async (req, res) => {
+/**
+ * @route DELETE /staff/products/:id
+ * @desc Delete a product by productId
+ */
+router.delete("/:id", async (req, res) => {
   try {
-    const deleted = await Product.destroy({ where: { productId: req.params.productId } });
-    if (deleted) return res.json({ message: 'Deleted' });
-    res.status(404).json({ message: 'Not found' });
+    const { id } = req.params; // <-- productId from URL
+
+    const deleted = await Product.destroy({ where: { productId: id } });
+    if (!deleted) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json({ message: "Product deleted successfully" });
   } catch (err) {
-    res.status(500).json({ error: 'Delete failed' });
+    console.error("❌ Error deleting product:", err);
+    res.status(500).json({ message: "Failed to delete product" });
   }
 });
 
