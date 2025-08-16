@@ -98,6 +98,13 @@ useEffect(() => {
           onClick={() => navigate('/my-rfqs')}>
            MY RFQS
         </Button>
+        <Button
+          fullWidth
+          variant="outlined"
+          sx={{ mb: 2 }}
+          onClick={() => navigate('/delivery-management')}>
+           Delivery
+        </Button>
         <Button fullWidth variant="contained" sx={{ mb: 2 }}>ACCOUNT INFO</Button>
         <Button fullWidth color="error" onClick={handleLogout}>LOGOUT</Button>
       </Box>

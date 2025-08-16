@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Button, Paper, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import http from '../https';
 
 const ProductPage = () => {
   const navigate = useNavigate();

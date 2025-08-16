@@ -29,7 +29,7 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { useContext } from 'react';
 import UserContext from '../contexts/UserContext'; // ✅ import if not already
 import StaffSidebar from '../components/StaffSidebar'; // add this at the top
-
+import http from '../https';
 
 const StaffDashboard = () => {
   const [customers, setCustomers] = useState([]);
@@ -49,7 +49,7 @@ const [inactivityModalOpen, setInactivityModalOpen] = useState(false);
 
 
 useEffect(() => {
-  axios.get('http://localhost:5000/staff/customers', {
+  axios.get('http://localhost:3001/staff/customers', {
     headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
   })
     .then(res => {
@@ -65,7 +65,7 @@ useEffect(() => {
   const [securityLogs, setSecurityLogs] = useState([]);
 
   useEffect(() => {
-  axios.get('http://localhost:5000/staff/security-logs', {
+  axios.get('http://localhost:3001/staff/security-logs', {
     headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
   })
     .then(res => {
@@ -79,7 +79,7 @@ useEffect(() => {
   const handleGenerateInsight = async () => {
   setGenerating(true);
   try {
-    const res = await axios.post('http://localhost:5000/staff/generate-insight', { customers }, {
+    const res = await axios.post('http://localhost:3001/staff/generate-insight', { customers }, {
       headers: { Authorization: `Bearer ${localStorage.getItem('accessToken')}` }
     });
     setInsight(res.data.insight);
@@ -121,7 +121,7 @@ useEffect(() => {
 
 const handleInfoClick = async (user) => {
   try {
-    const res = await axios.post("http://localhost:5000/staff/inactivity-likelihood", {
+    const res = await axios.post("http://localhost:3001/staff/inactivity-likelihood", {
       email: user.email,
       login_count: user.login_count,
       created_at: user.createdAt // if available

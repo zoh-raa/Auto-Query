@@ -101,11 +101,10 @@ exports.deleteRFQ = async (req, res) => {
     const { id } = req.params;
     const rfq = await RFQ.findByPk(id);
 
-    if (!rfq) {
-      return res.status(404).json({ message: "RFQ not found" });
-    }
+    if (!rfq) return res.status(404).json({ message: "RFQ not found" });
 
-    if (rfq.customerId !== req.user.id) {
+    // Allow if customer owns it OR user is staff
+    if (rfq.customerId !== req.user.id && req.user.role !== 'staff') {
       return res.status(403).json({ message: "Forbidden: Not your RFQ" });
     }
 

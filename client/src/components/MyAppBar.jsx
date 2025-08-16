@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import UserContext from "../contexts/UserContext";
-import { AppBar, Toolbar, Typography, Box, Button, InputBase } from '@mui/material';
+import { Container,AppBar, Toolbar, Typography, Box, Button, InputBase } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import InventoryIcon from '@mui/icons-material/Inventory';

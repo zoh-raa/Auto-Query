@@ -4,6 +4,7 @@ import { http } from '../https';
 import { CartContext } from '../contexts/CartContext';
 import { toast } from 'react-hot-toast';
 
+
 const SearchResults = () => {
     const { search } = useLocation(); // Get the query from the URL
     const queryParams = new URLSearchParams(search);  // Parse the query string
@@ -82,7 +83,7 @@ const SearchResults = () => {
                             <h2 style={{ color: '#333', marginBottom: '10px' }}>{result.productName}</h2>
                             {result.imageUrl && (
                                 <img 
-                                    src={`http://localhost:5000${result.imageUrl}`} 
+                                    src={`http://localhost:3001${result.imageUrl}`} 
                                     alt={result.productName}
                                     style={{ 
                                         width: '100%', 

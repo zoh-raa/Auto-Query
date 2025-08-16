@@ -4,6 +4,7 @@ import { Button, Typography, IconButton, Dialog, DialogActions, DialogContent, D
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router';
 import { toast } from 'react-toastify';
+import { http } from '../https';
 
 
 const CartPage = () => {

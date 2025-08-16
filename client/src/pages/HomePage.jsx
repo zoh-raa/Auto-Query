@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'; // For notifications
 import UserContext from '../contexts/UserContext';
 import axios from 'axios';
 import { CartContext } from '../contexts/CartContext';
+import { http } from '../https';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -61,7 +62,7 @@ const HomePage = () => {
   };
 
   useEffect(() => {
-    axios.get('http://localhost:5000/reviews')
+    axios.get('http://localhost:3001/reviews')
       .then(res => setReviews(res.data))
       .catch(err => {
         console.error(err);

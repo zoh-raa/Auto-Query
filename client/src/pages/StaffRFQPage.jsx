@@ -33,14 +33,29 @@ const StaffRFQPage = () => {
   }, [loading, user, navigate]);
 
   useEffect(() => {
-    if (user && user.role === 'staff') {
-      axios
-        .get('/rfq/all')
-        .then((res) => setRfqs(res.data))
-        .catch((err) => console.error('Failed to fetch RFQs:', err))
-        .finally(() => setLoadingRfqs(false));
+  const fetchRFQs = async () => {
+    if (!user || user.role !== 'staff') return;
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await http.get('/rfq/all', {
+        headers: { Authorization: `Bearer ${token || ''}` }
+      });
+      const data = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data.rfqs)
+        ? res.data.rfqs
+        : [];
+      setRfqs(data);
+    } catch (err) {
+      console.error('Failed to fetch RFQs:', err.response?.data || err.message);
+    } finally {
+      setLoadingRfqs(false);
     }
-  }, [user]);
+  };
+
+  fetchRFQs();
+}, [user]);
 
   const getStatusColor = (status) => {
     if (!status) return 'grey';
@@ -59,14 +74,20 @@ const StaffRFQPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this RFQ?')) return;
-    try {
-      await axios.delete(`/rfq/${id}`);
-      setRfqs((prev) => prev.filter((r) => r.id !== id));
-    } catch (err) {
-      alert('Failed to delete RFQ.');
-    }
-  };
+  if (!window.confirm('Are you sure you want to delete this RFQ?')) return;
+
+  try {
+    const token = localStorage.getItem('accessToken'); // get JWT from localStorage
+    await http.delete(`/rfq/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token || ''}`,
+      },
+    });
+    setRfqs((prev) => prev.filter((r) => r.id !== id));
+  } catch (err) {
+    console.error('Failed to delete RFQ', err);
+  }
+};
 
   const handleCloseModal = () => {
     setViewingRFQ(null);
@@ -154,6 +175,9 @@ const StaffRFQPage = () => {
             </Button>
             <Button variant="outlined" color="error" onClick={() => handleDelete(rfq.id)}>
               Delete
+            </Button>
+            <Button variant="contained" onClick={() => navigate('/staff-delivery-management')}>
+              View All Deliveries
             </Button>
           </Stack>
         </Paper>

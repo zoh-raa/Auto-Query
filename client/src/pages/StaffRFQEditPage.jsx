@@ -17,35 +17,48 @@ const StaffEditRFQPage = () => {
   const [status, setStatus] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchRFQ = async () => {
-      try {
-        const res = await axios.get(`/rfq/${id}`);
-        setRfq(res.data);
-        setRemarks(res.data.remarks || '');
-        setStatus(res.data.status || '');
-      } catch (err) {
-        console.error('Failed to load RFQ', err);
-      }
-    };
+  // Fetch RFQ details
+  const fetchRFQ = async () => {
+    try {
+      const token = localStorage.getItem('accessToken'); // get JWT
+      const res = await http.get(`/rfq/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token || ''}`,
+        },
+      });
+      setRfq(res.data);
+      setRemarks(res.data.remarks || '');
+      setStatus(res.data.status || '');
+    } catch (err) {
+      console.error('Failed to load RFQ', err);
+    }
+  };
 
+  // Call fetchRFQ on mount
+  useEffect(() => {
     fetchRFQ();
   }, [id]);
 
+  // Submit updated RFQ
   const handleSubmit = async () => {
     try {
-      await axios.put(`/rfq/${id}`, {
-        remarks,
-        status,
-      });
+      const token = localStorage.getItem('accessToken');
+      await http.put(
+        `/rfq/${id}`,
+        { remarks, status },
+        { headers: { Authorization: `Bearer ${token || ''}` } }
+      );
       alert('RFQ updated successfully!');
       navigate('/staff/rfqs');
     } catch (err) {
       console.error('Failed to update RFQ', err);
+      alert('Failed to update RFQ.');
     }
   };
 
   if (!rfq) return <Typography>Loading...</Typography>;
+
+
 
   return (
     <Box p={3}>

@@ -382,3 +382,31 @@
   background: transparent;
   outline: none;
 }
+/* index.css or App.css */
+
+.delivery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.delivery-card {
+  border: 2px solid #ddd;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.delivery-card:hover {
+  border-color: #3b82f6; /* blue-600 */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.delivery-card.selected {
+  border-color: #3b82f6; /* blue-600 */
+  background-color: #ebf4ff; /* light blue background */
+}

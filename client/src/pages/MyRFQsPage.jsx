@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { http } from '../https';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import UserContext from '../contexts/UserContext';
+import axios from 'axios';
+import http from '../https';
 
 const MyRFQsPage = () => {
   const { user, loading } = useContext(UserContext);
@@ -10,19 +11,34 @@ const MyRFQsPage = () => {
   const [loadingRfqs, setLoadingRfqs] = useState(true);
   const navigate = useNavigate();
 
+  // Redirect if not logged in
   useEffect(() => {
     if (!loading && !user) {
       navigate('/login');
     }
   }, [loading, user, navigate]);
 
+  // Fetch RFQs with JWT token
   useEffect(() => {
-    if (user) {
-      axios.get('/rfq/my')
-        .then(res => setRfqs(res.data))
-        .catch(err => console.error(err))
-        .finally(() => setLoadingRfqs(false));
-    }
+    const fetchRFQs = async () => {
+      if (!user) return;
+
+      try {
+        const token = localStorage.getItem('accessToken'); // get JWT
+        const res = await axios.get('http://localhost:3001/rfq/my', {
+          headers: {
+            Authorization: `Bearer ${token || ''}`
+          }
+        });
+        setRfqs(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error('Error fetching RFQs:', err.response?.data || err.message);
+      } finally {
+        setLoadingRfqs(false);
+      }
+    };
+
+    fetchRFQs();
   }, [user]);
 
   const getStatusColor = (status) => {
@@ -37,52 +53,22 @@ const MyRFQsPage = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this RFQ?")) return;
-    try {
-      await axios.delete(`/rfq/${id}`);
-      setRfqs(rfqs.filter(r => r.id !== id));
-    } catch (err) {
-      alert("Failed to delete RFQ.");
-    }
-  };
+  if (!window.confirm('Are you sure you want to delete this RFQ?')) return;
 
-  const printSingleRFQ = (rfq) => {
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    const content = `
-      <html>
-        <head>
-          <title>Print RFQ ${rfq.id}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h2 { margin-bottom: 10px; }
-            .item { border-bottom: 1px solid #ccc; padding: 5px 0; }
-          </style>
-        </head>
-        <body>
-          <h2>RFQ ID: ${rfq.id}</h2>
-          <p><strong>Status:</strong> ${rfq.status}</p>
-          <p><strong>Date Created:</strong> ${new Date(rfq.createdAt).toLocaleString()}</p>
-          <p><strong>Remarks:</strong> ${rfq.remarks || '-'}</p>
-          <h3>Items</h3>
-          ${rfq.RFQItems.map(item => `
-            <div class="item">
-              <p>${item.product_name} x ${item.quantity}</p>
-              <p>Remarks: ${item.remarks || '-'}</p>
-            </div>
-          `).join('')}
-          ${rfq.qr_code ? `<img src="${rfq.qr_code}" alt="QR Code" style="margin-top:20px;max-width:150px;" />` : ''}
-          <script>
-            window.onload = function() {
-              window.print();
-              window.onafterprint = () => window.close();
-            };
-          </script>
-        </body>
-      </html>
-    `;
-    printWindow.document.write(content);
-    printWindow.document.close();
-  };
+  try {
+    const token = localStorage.getItem('accessToken');
+    await axios.delete(`http://localhost:3001/rfq/${id}`, {
+  headers: { Authorization: `Bearer ${token || ''}` }
+    });
+    
+    // remove from state
+    setRfqs((prevRfqs) => prevRfqs.filter((r) => r.id !== id));
+    alert('RFQ deleted successfully!');
+  } catch (err) {
+    console.error('Failed to delete RFQ', err.response?.data || err.message);
+
+  }
+};
 
   if (loading || loadingRfqs) return <Typography>Loading...</Typography>;
   if (rfqs.length === 0) return <Typography>No RFQs found.</Typography>;
@@ -116,16 +102,11 @@ const MyRFQsPage = () => {
           )}
 
           <Box mt={2} display="flex" gap={2}>
-            <Button variant="contained" onClick={() => printSingleRFQ(rfq)}>Print RFQ</Button>
-            <Button variant="contained" onClick={() => {
-              const win = window.open('', '_blank');
-              win.document.write(`<img src="${rfq.qr_code}" alt="QR Code" />`);
-              win.document.close();
-              win.focus();
-              win.print();
-              win.close();
-            }}>Print QR</Button>
+            <Button variant="contained" onClick={() => window.print()}>Print RFQ</Button>
             <Button variant="outlined" color="error" onClick={() => handleDelete(rfq.id)}>Delete RFQ</Button>
+             <Button variant="contained" color="secondary" onClick={() => navigate('/select-delivery', { state: { rfq } })}>
+          Select Delivery
+        </Button>
           </Box>
         </Paper>
       ))}

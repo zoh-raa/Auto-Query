@@ -15,6 +15,7 @@ import toast from 'react-hot-toast';
 import { http } from '../https';
 import { CartContext } from '../contexts/CartContext';
 import UserContext from '../contexts/UserContext';
+import axios from 'axios';
 
 const RFQFormPage = () => {
   const navigate = useNavigate();
@@ -89,7 +90,13 @@ const RFQFormPage = () => {
         comments,
       };
 
-      const res = await axios.post('/rfq', payload);
+       const token = localStorage.getItem("accessToken");
+
+    const res = await axios.post('http://localhost:3001/rfq', payload, {
+      headers: {
+        Authorization: `Bearer ${token || ""}`,
+      },
+    });
       if (res.data.qr_code) setQrCode(res.data.qr_code);
 
       toast.success("RFQ submitted successfully!");

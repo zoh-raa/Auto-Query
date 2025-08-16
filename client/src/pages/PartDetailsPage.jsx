@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Paper, Button, Divider, Stack } from '@mui/material';
+import http from '../https';
 
 const PartDetailsPage = () => {
   const { productId } = useParams();

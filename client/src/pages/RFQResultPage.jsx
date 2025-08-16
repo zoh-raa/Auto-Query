@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import http from '../https';
 
 const RFQResultPage = () => {
   const location = useLocation();
@@ -71,6 +72,10 @@ console.log('Status received:', status);
         <Button variant="contained" onClick={handlePrintRFQ}>Print RFQ</Button>
         <Button variant="contained" onClick={handlePrintQR}>Print QR</Button>
         <Button variant="outlined" onClick={() => navigate('/my-rfqs')}>View My RFQs</Button>
+        <Button variant="contained" color="secondary" onClick={() => navigate('/select-delivery', { state: { rfq } })}>
+          Select Delivery
+        </Button>
+
       </Box>
     </Box>
   );

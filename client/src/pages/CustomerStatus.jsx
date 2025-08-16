@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, Button, Paper } from '@mui/material';
 import StaffSidebar from '../components/StaffSidebar';
 import axios from 'axios';
+import http from '../https';
 
 const CustomerStatus = () => {
   const { state } = useLocation();

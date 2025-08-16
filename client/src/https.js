@@ -39,4 +39,3 @@ instance.interceptors.response.use(
 
 export default http;
 export { instance, http }; // ✅ now http is available as a named export too
-
