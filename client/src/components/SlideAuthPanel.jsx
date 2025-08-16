@@ -30,11 +30,12 @@ const SlideAuthPanel = ({ open, onClose }) => {
       );
     }
 
-    if (role === 'customer') {
-      return tab === 0
-        ? <CustomerLogin onForgot={() => setMode('forgot')} />
-        : <CustomerRegister />;
-    } else {
+   if (role === 'customer') {
+  return tab === 0
+    ? <CustomerLogin onForgot={() => setMode('forgot')} />
+    : <CustomerRegister onSwitchToLogin={() => setTab(0)} />; // 👈 add prop
+}
+ else {
       return tab === 0
         ? <StaffLogin />
         : <StaffRegister />;
