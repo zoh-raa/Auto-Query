@@ -62,8 +62,14 @@ const CreateProductPage = () => {
     for (const key in formData) {
       data.append(key, formData[key]);
     }
-    fetch('http://localhost:5000/staff/products', {
-      method: 'POST',
+
+    const url = isEditing
+      ? `http://localhost:3001/staff/products/${editingProductId}`
+      : 'http://localhost:3001/staff/products';
+    const method = isEditing ? 'PUT' : 'POST';
+
+    fetch(url, {
+      method,
       headers: {
         Authorization: `Bearer ${localStorage.getItem('accessToken')}`
       },
@@ -71,7 +77,7 @@ const CreateProductPage = () => {
     })
       .then(res => res.json())
       .then(result => {
-        alert('Product Created!');
+        alert(isEditing ? 'Product Updated!' : 'Product Created!');
         setFormData({
           productName: '',
           productId: '',
@@ -79,15 +85,19 @@ const CreateProductPage = () => {
           productDescription: '',
           image: null,
           quantity: '',
-          productBrand: '',   // <-- add this
-          price: ''           // <-- add this
+          productBrand: '',
+          price: ''
         });
         setConfirmOpen(false);
+        setIsEditing(false);
+        setEditingProductId(null);
         fetchParts();
       })
       .catch(err => {
-        alert('Failed to create product');
+        alert(isEditing ? 'Failed to update product' : 'Failed to create product');
         setConfirmOpen(false);
+        setIsEditing(false);
+        setEditingProductId(null);
       });
   };
 
