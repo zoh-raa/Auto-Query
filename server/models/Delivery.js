@@ -9,11 +9,15 @@ module.exports = (sequelize, DataTypes) => {
     description: { type: DataTypes.TEXT, allowNull: true },
     phone: { type: DataTypes.STRING, allowNull: true },
     deliveryProvider: { type: DataTypes.STRING, allowNull: true },
- status: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    defaultValue: 'Pending',
-  }
+    status: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'Pending',
+    },
+    cancelledBy: {
+      type: DataTypes.ENUM('customer', 'staff'),
+      allowNull: true,
+    }
   }, {
     tableName: "deliveries"
   });
@@ -22,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
     Delivery.belongsTo(models.Customer, { foreignKey: 'customerId' });
     Delivery.hasMany(models.DeliveryProduct, {
       foreignKey: 'deliveryId',
-      as: 'products' // alias added
+      as: 'products'
     });
   };
 

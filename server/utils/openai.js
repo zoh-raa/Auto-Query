@@ -23,7 +23,7 @@ ${deliveryText}`;
       max_tokens: 300,
     });
 
-     return completion.choices[0]?.message?.content?.trim() || 'Unable to generate message.';
+    return completion.choices[0]?.message?.content?.trim() || 'Unable to generate message.';
   } catch (err) {
     console.error('AI polite message error:', err);
     return 'Unable to generate message at this time.';
@@ -61,7 +61,7 @@ Items: ${items}.`;
  */
 async function callAI({ delivery, systemPrompt, maxTokens = 600, temperature = 0.4 }) {
   const safeDelivery = JSON.parse(JSON.stringify(delivery)); // avoid circular refs
-  const prompt = systemPrompt || 
+  const prompt = systemPrompt ||
     `You are a smart, concise assistant for delivery management.
 Summarize this delivery, highlighting key details and suggested actions:
 ${JSON.stringify(safeDelivery, null, 2)}`;
@@ -113,8 +113,10 @@ function heuristicDelayRisk(d) {
   let score = 0;
 
   switch (d.status) {
-    case "Delivered":
     case "Cancelled":
+      score = 100; // always high risk
+      break;
+    case "Delivered":
       score = 0;
       break;
     case "In Progress":

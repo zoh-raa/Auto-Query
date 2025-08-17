@@ -222,6 +222,7 @@ router.get('/staff/all', validateToken, async (req, res) => {
 });
 
 // Update delivery (staff)
+// Update delivery (staff)
 router.put('/staff/:id', validateToken, async (req, res) => {
   try {
     if (!req.user || req.user.role !== 'staff') {
@@ -231,10 +232,25 @@ router.put('/staff/:id', validateToken, async (req, res) => {
     const id = req.params.id;
     const { poNumber, assignedTo, deliveryDate, timing, location, description, deliveryProvider, phone, status } = req.body;
     console.log('PUT /staff/:id body:', req.body);
+
     const delivery = await Delivery.findByPk(id);
     if (!delivery) return res.status(404).json({ message: 'Delivery not found' });
 
-    await delivery.update({ poNumber, assignedTo, deliveryDate, timing, location, description, deliveryProvider, phone, status });
+    // Auto-set cancelledBy if status is Cancelled
+    const updatedData = {
+      poNumber,
+      assignedTo,
+      deliveryDate,
+      timing,
+      location,
+      description,
+      deliveryProvider,
+      phone,
+      status,
+      cancelledBy: status === 'Cancelled' ? 'staff' : null
+    };
+
+    await delivery.update(updatedData);
 
     res.json({ message: 'Delivery updated' });
   } catch (error) {
