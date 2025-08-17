@@ -10,7 +10,7 @@ const axios = require('axios'); // ✅ Import this if not already
 const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
 const { LoginAttempt } = require('../models'); // ✅ Required for /security-logs
 const { sendVerification, checkVerification } = require('../utils/sms'); // ⬅️ add this
-
+const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 // ensures staff-only product management
 // mounts my products.js under your staff.js so that uploads call staff/products
 const productsRoute = require("./products");
@@ -310,8 +310,6 @@ router.post('/inactivity-likelihood', async (req, res) => {
 });
 
 
-
-
 // GET /staff/security-logs
 router.get("/security-logs", async (req, res) => {
   try {
@@ -322,13 +320,29 @@ router.get("/security-logs", async (req, res) => {
 
     const logsWithGeo = await Promise.all(logs.map(async log => {
       try {
-        const geoRes = await axios.get(`https://ipapi.co/${log.ip}/json/`);
+        // call Google Maps Geocoding API
+        const geoRes = await axios.get(
+          "https://maps.googleapis.com/maps/api/geocode/json",
+          { params: { address: log.location, key: apiKey } }
+        );
+
+        if (geoRes.data.status === "OK" && geoRes.data.results[0]) {
+          const { lat, lng } = geoRes.data.results[0].geometry.location;
+          return {
+            ...log.dataValues,
+            latitude: lat,
+            longitude: lng
+          };
+        }
+
+        // fallback when no results
         return {
           ...log.dataValues,
-          latitude: geoRes.data.latitude,
-          longitude: geoRes.data.longitude
+          latitude: null,
+          longitude: null
         };
-      } catch {
+      } catch (err) {
+        console.error("Geocode error:", log.location, err.message);
         return {
           ...log.dataValues,
           latitude: null,
@@ -343,5 +357,8 @@ router.get("/security-logs", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+
+
 
 module.exports = router;
