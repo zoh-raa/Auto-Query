@@ -47,6 +47,7 @@ const deliveryRoute = require('./routes/delivery');
 
 const aiRecommendRoute = require('./routes/aiRecommend');
 const chatbotRoute = require('./routes/chatbot');
+const staffRecovery = require('./routes/staff'); // already present
 
 // Register routes
 app.use('/customer', customerRoute);
@@ -61,10 +62,11 @@ app.use('/product', productRoute);
 app.use('/ai', aiRecommendRoute);
 app.use('/api/chatbot', chatbotRoute);
 app.use('/api/delivery', deliveryRoute);
+app.use('/staff/recovery', staffRecovery);
 
 // Database sync & server start
 const db = require('./models');
-const { Customer, Review, Product, LoginAttempt, Staff, Cart, RFQ, RFQItem, Delivery, DeliveryProduct, PasswordResetOtp } = db;
+const { Customer, Review, Product, LoginAttempt, Staff, Cart, RFQ, RFQItem, Delivery, DeliveryProduct, PasswordResetOtp, staffotp } = db;
 
 (async () => {
   try {
@@ -79,6 +81,7 @@ const { Customer, Review, Product, LoginAttempt, Staff, Cart, RFQ, RFQItem, Deli
     await Delivery.sync({ alter: true });
     await DeliveryProduct.sync({ alter: true });
     await PasswordResetOtp.sync({ alter: true });
+    await staffotp.sync({ alter: true });
 
     const port = process.env.APP_PORT || 3001;
     app.listen(port, () => {

@@ -1,3 +1,4 @@
+// client/src/components/SlideAuthPanel.jsx
 import React, { useState } from 'react';
 import { Box, Dialog, Slide, Tabs, Tab, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -8,42 +9,74 @@ import CustomerRegister from '../pages/Register';
 import StaffLogin from '../pages/StaffLogin';
 import StaffRegister from '../pages/RegisterStaff';
 import ForgotPasswordFlow from '../components/ForgotPasswordFlow';
-
+import StaffIdReceipt from '../components/StaffIdReceipt'; // ⬅️ new
 
 const SlideAuthPanel = ({ open, onClose }) => {
-  const [role, setRole] = useState('customer'); // 'customer' or 'staff'
+  const [role, setRole] = useState('customer'); // 'customer' | 'staff'
   const [tab, setTab] = useState(0); // 0 = Login, 1 = Register
-  const [mode, setMode] = useState('auth');
+  const [mode, setMode] = useState('auth'); // 'auth' | 'forgot' | 'staff-id'
+  const [staffNewId, setStaffNewId] = useState('');
 
-  const handleRoleChange = (event, newRole) => {
+  const handleRoleChange = (_e, newRole) => {
     if (newRole !== null) setRole(newRole);
   };
 
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = (_e, newValue) => {
     setTab(newValue);
   };
 
-  const renderForm = () => {
-    if (mode === 'forgot') {
-      return (
-        <ForgotPasswordFlow onBack={() => setMode('auth')} />
-      );
-    }
-
-   if (role === 'customer') {
-  return tab === 0
-    ? <CustomerLogin onForgot={() => setMode('forgot')} />
-    : <CustomerRegister onSwitchToLogin={() => setTab(0)} />; // 👈 add prop
-}
- else {
-      return tab === 0
-        ? <StaffLogin />
-        : <StaffRegister />;
-    }
+  const goStaffLogin = () => {
+    // jump to staff login within the panel
+    setMode('auth');
+    setRole('staff');
+    setTab(0);
   };
 
+const renderForm = () => {
+  if (mode === 'forgot') {
+    return (
+      <ForgotPasswordFlow
+        role={role}
+        onBack={() => setMode('auth')}
+        onRevealStaffId={(id) => {
+          setStaffNewId(id);     // <- save the revealed staff_id
+          setMode('staff-id');   // <- switch to the receipt screen
+        }}
+        onResetComplete={() => {
+          // after password reset, send them to Staff Login in-panel
+          setMode('auth');
+          setRole('staff');
+          setTab(0);
+        }}
+      />
+    );
+  }
+
+  if (mode === 'staff-id') {
+    return <StaffIdReceipt staffId={staffNewId} onGoLogin={goStaffLogin} />;
+  }
+
+  if (role === 'customer') {
+    return tab === 0
+      ? <CustomerLogin onForgot={() => setMode('forgot')} />
+      : <CustomerRegister onSwitchToLogin={() => setTab(0)} />;
+  } else {
+    return tab === 0
+      ? <StaffLogin onForgot={() => setMode('forgot')} />
+      : (
+        <StaffRegister
+          onRegistered={(newStaffId) => {
+            setStaffNewId(newStaffId);
+            setMode('staff-id');
+          }}
+        />
+      );
+  }
+};
+
+
   return (
-     <Dialog
+    <Dialog
       open={open}
       onClose={() => { setMode('auth'); onClose?.(); }}
       fullScreen
@@ -68,8 +101,8 @@ const SlideAuthPanel = ({ open, onClose }) => {
         </IconButton>
       </Box>
 
-      {/* Hide role and tabs when in forgot mode to keep the flow focused */}
-      {mode !== 'forgot' && (
+      {/* Hide role/tabs when in forgot or staff-id mode */}
+      {mode === 'auth' && (
         <>
           <ToggleButtonGroup
             value={role}
@@ -81,7 +114,7 @@ const SlideAuthPanel = ({ open, onClose }) => {
             <ToggleButton value="staff">Staff</ToggleButton>
           </ToggleButtonGroup>
 
-          <Tabs value={tab} onChange={(_e, v) => setTab(v)} centered>
+          <Tabs value={tab} onChange={handleTabChange} centered>
             <Tab label="Login" />
             <Tab label="Sign Up" />
           </Tabs>

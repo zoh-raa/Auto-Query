@@ -1,3 +1,4 @@
+// StaffLogin.jsx
 import React, { useContext } from 'react';
 import {
   Box,
@@ -5,7 +6,8 @@ import {
   TextField,
   Button,
   Paper,
-  Divider
+  Divider,
+  Link
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
@@ -14,9 +16,9 @@ import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import UserContext from '../contexts/UserContext';
-import SecurityIcon from '@mui/icons-material/Security'; // 👈 Staff icon
+import SecurityIcon from '@mui/icons-material/Security';
 
-function StaffLogin() {
+function StaffLogin({onForgot}) {
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext);
 
@@ -36,7 +38,7 @@ function StaffLogin() {
           password: data.password.trim()
         };
 
-    const res = await axios.post('http://localhost:3001/staff/login', payload);
+        const res = await axios.post('http://localhost:3001/staff/login', payload);
 
         const staffUser = {
           name: res.data.user.name || "Staff",
@@ -117,6 +119,13 @@ function StaffLogin() {
           >
             Login
           </Button>
+        </Box>
+
+        {/* 👇 Forgot password/staff id link */}
+        <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Button variant="text" onClick={onForgot}>
+  Forgot password or Staff ID?
+</Button>
         </Box>
       </Paper>
 
