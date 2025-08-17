@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
-import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Typography, Table, TableBody, TableCell, TableHead, TableRow,
-  Card, CardContent, Grid
-} from '@mui/material';
+// Ensure only one Button import:
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Table, TableBody, TableCell, TableHead, TableRow, CircularProgress, Card, CardContent, Grid } from '@mui/material';
 import { http } from '../https';
 
+
+
 const getStatusColor = (status) => {
-  switch(status) {
+  switch (status) {
     case 'Delivered': return 'green';
     case 'Pending': return 'orange';
     case 'In Progress': return 'blue';
@@ -20,6 +19,10 @@ function CustomerDeliveryManagement() {
   const [deliveries, setDeliveries] = useState([]);
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
+
+  const [politeMsg, setPoliteMsg] = useState(null);
+  const [politeLoading, setPoliteLoading] = useState(false);
+
   const dialogContentRef = useRef(null);
 
   useEffect(() => {
@@ -32,9 +35,38 @@ function CustomerDeliveryManagement() {
       const res = await http.get("/api/delivery/my", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setDeliveries(res.data);
+      setDeliveries(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Failed to fetch deliveries", err);
+    }
+  };
+
+  const loadPoliteMessage = async () => {
+    if (!selectedDelivery) return;
+    setPoliteLoading(true);
+    setPoliteMsg(null); // clear previous message
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await http.post(
+        `/api/delivery/my/${selectedDelivery.id}/ai-message`,
+        { tone: 'friendly' },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Display the message or fallback if empty
+      setPoliteMsg(res.data?.message || 'No message returned from server.');
+
+    } catch (err) {
+      console.error("[Frontend] Failed to generate polite message:", err);
+
+      // Display backend error message if available
+      if (err.response?.data?.message) {
+        setPoliteMsg(`Error: ${err.response.data.message}`);
+      } else {
+        setPoliteMsg('Unable to generate message at this time.');
+      }
+    } finally {
+      setPoliteLoading(false);
     }
   };
 
@@ -54,6 +86,7 @@ function CustomerDeliveryManagement() {
   const handleView = (delivery) => {
     setSelectedDelivery(delivery);
     setOpenDialog(true);
+    setPoliteMsg(null);
   };
 
   const handlePrint = () => {
@@ -65,7 +98,7 @@ function CustomerDeliveryManagement() {
         <head>
           <title>Print Delivery Details</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+            body { font-family: Arial, sans-serif; padding: 20px; color:#333; }
             h6 { margin-top: 1rem; color:#1976d2; }
             table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
             th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
@@ -99,44 +132,33 @@ function CustomerDeliveryManagement() {
                   <Typography sx={{ fontWeight: 'bold', color: getStatusColor(delivery.status) }}>
                     Status: {delivery.status || 'Pending'}
                   </Typography>
-                  <Typography sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                    Delivery Date: {delivery.deliveryDate}
-                  </Typography>
-                  <Typography sx={{ fontWeight: 'bold', color: '#673ab7' }}>
-                    Timing: {delivery.timing}
-                  </Typography>
+                  <Typography sx={{ fontWeight: 'bold', color: '#1976d2' }}>Delivery Date: {delivery.deliveryDate}</Typography>
+                  <Typography sx={{ fontWeight: 'bold', color: '#673ab7' }}>Timing: {delivery.timing}</Typography>
                   <Typography sx={{ fontWeight: 'bold' }}>Assigned To: {delivery.assignedTo}</Typography>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <Typography sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                    RFQ ID: {delivery.rfqId || 'N/A'}
-                  </Typography>
+                  <Typography sx={{ fontWeight: 'bold', color: '#1976d2' }}>RFQ ID: {delivery.rfqId || 'N/A'}</Typography>
                   <Typography>Location: {delivery.location}</Typography>
                   <Typography>Description: {delivery.description}</Typography>
                   <Typography>Delivery Provider: {delivery.deliveryProvider || 'N/A'}</Typography>
                 </Grid>
                 <Grid item xs={12} sm={4}>
-          <Typography sx={{ fontWeight: 'bold' }}>User: {delivery?.user?.name}</Typography>
-          <Typography sx={{ fontWeight: 'bold' }}>Email: {delivery?.user?.email}</Typography>
-          <Typography sx={{ fontWeight: 'bold' }}>Phone: {delivery?.user?.phone || delivery.phone}</Typography>
-        </Grid>
-      </Grid>
+                  <Typography sx={{ fontWeight: 'bold' }}>User: {delivery?.user?.name}</Typography>
+                  <Typography sx={{ fontWeight: 'bold' }}>Email: {delivery?.user?.email}</Typography>
+                  <Typography sx={{ fontWeight: 'bold' }}>Phone: {delivery?.user?.phone || delivery.phone}</Typography>
+                </Grid>
+              </Grid>
 
-              <Button variant="outlined" color="info" sx={{ mt: 2, mr: 1 }} onClick={() => handleView(delivery)}>
-                View
-              </Button>
-              <Button variant="outlined" color="error" sx={{ mt: 2 }} onClick={() => handleDelete(delivery.id)}>
-                Delete
-              </Button>
+              <Button variant="outlined" color="info" sx={{ mt: 2, mr: 1 }} onClick={() => handleView(delivery)}>View</Button>
+              <Button variant="outlined" color="error" sx={{ mt: 2 }} onClick={() => handleDelete(delivery.id)}>Delete</Button>
             </CardContent>
           </Card>
         ))
       )}
 
+      {/* Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-          Delivery Details
-        </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'bold', color: '#1976d2' }}>Delivery Details</DialogTitle>
         <DialogContent ref={dialogContentRef} sx={{ fontSize: '0.95rem', color: '#333' }}>
           {selectedDelivery && (
             <>
@@ -145,12 +167,8 @@ function CustomerDeliveryManagement() {
               <Typography sx={{ fontWeight: 'bold', color: getStatusColor(selectedDelivery.status) }}>
                 Status: {selectedDelivery.status || 'Pending'}
               </Typography>
-              <Typography sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                Delivery Date: {selectedDelivery.deliveryDate}
-              </Typography>
-              <Typography sx={{ fontWeight: 'bold', color: '#673ab7' }}>
-                Timing: {selectedDelivery.timing}
-              </Typography>
+              <Typography sx={{ fontWeight: 'bold', color: '#1976d2' }}>Delivery Date: {selectedDelivery.deliveryDate}</Typography>
+              <Typography sx={{ fontWeight: 'bold', color: '#673ab7' }}>Timing: {selectedDelivery.timing}</Typography>
               <Typography><strong>RFQ ID:</strong> {selectedDelivery.rfqId || 'N/A'}</Typography>
               <Typography sx={{ fontWeight: 'bold' }}>Assigned To: {selectedDelivery.assignedTo}</Typography>
               <Typography><strong>Location:</strong> {selectedDelivery.location}</Typography>
@@ -158,9 +176,9 @@ function CustomerDeliveryManagement() {
               <Typography><strong>Delivery Provider:</strong> {selectedDelivery.deliveryProvider || 'N/A'}</Typography>
 
               <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold', color: '#1976d2' }}>User Info</Typography>
-<Typography sx={{ fontWeight: 'bold' }}>Name: {selectedDelivery?.user?.name}</Typography>
-<Typography sx={{ fontWeight: 'bold' }}>Email: {selectedDelivery?.user?.email}</Typography>
-<Typography sx={{ fontWeight: 'bold' }}>Phone: {selectedDelivery?.user?.phone || selectedDelivery.phone}</Typography>
+              <Typography sx={{ fontWeight: 'bold' }}>Name: {selectedDelivery?.user?.name}</Typography>
+              <Typography sx={{ fontWeight: 'bold' }}>Email: {selectedDelivery?.user?.email}</Typography>
+              <Typography sx={{ fontWeight: 'bold' }}>Phone: {selectedDelivery?.user?.phone || selectedDelivery.phone}</Typography>
 
               <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold', color: '#1976d2' }}>Products</Typography>
               <Table sx={{ mt: 1 }}>
@@ -181,6 +199,41 @@ function CustomerDeliveryManagement() {
                   ))}
                 </TableBody>
               </Table>
+
+              {/* Polite Message */}
+              <div style={{ marginTop: 16 }}>
+                <Button
+                  onClick={loadPoliteMessage}
+                  disabled={politeLoading}
+                  variant="contained"
+                  sx={{ mr: 1 }}
+                >
+                  {politeLoading ? (
+                    <>
+                      <CircularProgress size={20} sx={{ mr: 1 }} />
+                      Generating…
+                    </>
+                  ) : 'Generate Message'}
+                </Button>
+
+                {politeMsg && (
+                  <Card sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      AI Message
+                    </Typography>
+                    <Typography
+                      sx={{ whiteSpace: 'pre-line', fontSize: '0.95rem', color: '#333' }}
+                    >
+                      {politeMsg
+                        .replace(/\[Your Name\].*?\n/g, '')       // remove placeholder
+                        .replace(/\[Your Company\]/g, 'AutoQuery') // replace company name
+                        .replace(/\[Your Contact Information\]/g, '') // remove contact placeholder
+                      }
+                    </Typography>
+                  </Card>
+                )}
+              </div>
+
             </>
           )}
         </DialogContent>

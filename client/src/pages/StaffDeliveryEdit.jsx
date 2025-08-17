@@ -14,6 +14,11 @@ function EditDelivery() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // AI states
+  const [aiSummary, setAiSummary] = useState('');
+  const [aiDelay, setAiDelay] = useState(null);
+  const [loadingAi, setLoadingAi] = useState(false);
+
   const normalizeStatus = (status) => {
     if (!status) return 'Pending';
     switch (status.trim().toLowerCase().replace(/\s/g, '')) {
@@ -44,7 +49,11 @@ function EditDelivery() {
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
-  if (loading) return <CircularProgress />;
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+      <CircularProgress />
+    </Box>
+  );
 
   const handleChange = (field) => (e) => {
     setDelivery(prev => ({ ...prev, [field]: e.target.value }));
@@ -70,6 +79,23 @@ function EditDelivery() {
       alert('Failed to save delivery');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Fetch AI summary and delay risk
+  const fetchAiSummary = async () => {
+    setLoadingAi(true);
+    try {
+      const summaryRes = await http.get(`/api/staff/${id}/ai-summary`);
+      setAiSummary(summaryRes.data.summary || '');
+
+      const delayRes = await http.get(`/api/staff/${id}/ai-delay`);
+      setAiDelay(delayRes.data || null);
+    } catch (err) {
+      console.error('AI fetch error', err);
+      alert('Failed to fetch AI summary');
+    } finally {
+      setLoadingAi(false);
     }
   };
 
@@ -161,6 +187,7 @@ function EditDelivery() {
         onChange={handleChange('phone')}
       />
 
+      {/* Save / Cancel Buttons */}
       <Box mt={3} display="flex" justifyContent="space-between">
         <Button variant="outlined" onClick={() => navigate('/staff/delivery-management')}>
           Cancel
@@ -169,6 +196,40 @@ function EditDelivery() {
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </Box>
+
+      {/* AI Summary Button */}
+      <Box mt={2} display="flex" gap={2}>
+        <Button
+          variant="outlined"
+          onClick={fetchAiSummary}
+          disabled={loadingAi}
+        >
+          {loadingAi ? 'Generating AI...' : 'Generate AI Summary'}
+        </Button>
+      </Box>
+
+      {/* AI Summary Display */}
+      {aiSummary && (
+        <Box mt={2} p={2} border="1px solid #ccc" borderRadius={2} bgcolor="#f9f9f9">
+          <Typography variant="h6">AI Summary:</Typography>
+          <Typography>{aiSummary}</Typography>
+        </Box>
+      )}
+
+      {/* AI Delay Risk Display */}
+      {aiDelay && (
+        <Box mt={2} p={2} border="1px solid #ccc" borderRadius={2} bgcolor="#fff3e0">
+          <Typography variant="h6">Delay Risk:</Typography>
+          <Typography>Risk Level: {aiDelay.riskLevel}</Typography>
+          <Typography>Score: {aiDelay.riskScore}</Typography>
+          <Typography>
+            Signals: {aiDelay.signals.overdue && 'Overdue, '}
+                     {aiDelay.signals.missingTiming && 'Missing Timing, '}
+                     {aiDelay.signals.largeOrder && 'Large Order'}
+          </Typography>
+        </Box>
+      )}
+
     </Box>
   );
 }

@@ -58,8 +58,12 @@ const SelectDelivery = () => {
       <div className="text-center mt-6">
         <button
           onClick={handleContinue}
-          className="bg-blue-600 text-white px-6 py-2 rounded disabled:opacity-50"
-          disabled={!selected} // Disable button if no selection made
+          disabled={!selected}
+          className={`px-8 py-3 rounded-xl font-semibold shadow-md transition-all duration-300 
+      ${selected
+              ? "bg-gradient-to-r from-blue-500 to-blue-700 text-white hover:scale-105 hover:shadow-lg"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
         >
           Continue to Delivery Form
         </button>

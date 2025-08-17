@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.848.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.864.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.1.2",
@@ -13,11 +13,14 @@
     "bcrypt": "^6.0.0",
     "chart.js": "^4.5.0",
     "dayjs": "^1.11.13",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
     "formik": "^2.4.6",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "nanoid": "^5.1.5",
     "nodemailer": "^7.0.5",
+    "openai": "^5.12.2",
     "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-chartjs-2": "^5.3.0",
@@ -26,6 +29,7 @@
     "react-router": "^7.6.3",
     "react-router-dom": "^7.7.1",
     "react-toastify": "^11.0.5",
+    "sequelize": "^6.37.7",
     "yup": "^1.6.1"
   }
 }

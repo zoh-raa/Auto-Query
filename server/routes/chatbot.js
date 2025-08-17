@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
+const { Delivery, DeliveryProduct } = require('../models');
 require('dotenv').config();
 
 // AWS Bedrock client setup
@@ -13,110 +14,148 @@ const bedrockClient = new BedrockRuntimeClient({
 });
 
 router.post('/', async (req, res) => {
-  const { stage, message, brand, model, year } = req.body;
-  const msg = message?.trim().toLowerCase();
-  let reply = "";
+  const { stage, message, brand, model, deliveryId, user } = req.body;
+  const msg = message?.trim().toLowerCase() || '';
+  let reply = '';
   let handledLocally = false;
-
-  const greetingKeywords = ['hello', 'hi', 'hey', 'hi there'];
-  const hoursKeywords = [
-    'how many hours', 'opening hours', 'what time', 'operating hours',
-    'when do you close', 'when do you open', 'working hours', 'closing time',
-    'business hours', 'time you open', 'time you close', 'are you open now',
-    'what time do you open', 'what time do you close'
-  ];
-
-  // Local logic
-  switch (stage) {
-    case 'general':
-      if (greetingKeywords.some(k => msg.includes(k))) {
-        reply = "👋 Welcome to our page! How can I assist you today?";
-        handledLocally = true;
-      } else if (hoursKeywords.some(k => msg.includes(k))) {
-        reply = "⏰ We operate 9am–6pm, Monday to Saturday.";
-        handledLocally = true;
-      }
-      break;
-
-    case 'partFinder':
-  if (brand && model && year) {
-    reply = `Got it! Based on your vehicle (${brand} ${model}, ${year}), we'll show compatible parts.`;
-    handledLocally = true;
-    return res.json({
-      reply,
-      showButton: true,          // show button in frontend
-      buttonText: "View Products",
-      buttonLink: "/product"     // navigate straight to ProductPage
-    });
-  } else {
-    reply = "Please provide your vehicle's brand, model, and year.";
-    handledLocally = true;
-  }
-  break;
-      
-
-    case 'rfq':
-      if (msg.includes('quote') || msg.includes('quotation') || msg.includes('request')) {
-        reply = "To request a quote, please go to your cart and click the 'Request Quote' button.";
-        handledLocally = true;
-      } else {
-        reply = "You can request a quote for items in your cart. Just let me know!";
-        handledLocally = true;
-      }
-      break;
-
-    case 'siteIssue':
-      if (msg.includes('error') || msg.includes('not working') || msg.includes('issue') || msg.includes('bug') || msg.includes('problem')) {
-        reply = "Sorry about that! Please describe the issue and we’ll notify our support team.";
-        handledLocally = true;
-      } else {
-        reply = "If you're facing an issue, let me know what’s wrong.";
-        handledLocally = true;
-      }
-      break;
-  }
-
-  // If matched logic, send reply
-  if (handledLocally) {
-    return res.json({ reply });
-  }
-
-  // If not matched, use Claude
-  const prompt = `
-You are a helpful assistant for an auto parts website.
-User message: "${message}"
-Vehicle: Brand=${brand || 'N/A'}, Model=${model || 'N/A'}, Year=${year || 'N/A'}
-
-Respond politely and accurately.`;
+  let showButton = false;
+  let buttonText = '';
+  let buttonLink = '';
 
   try {
+    // ==== LOCAL HANDLING FIRST ====
+    switch (stage) {
+      case 'general':
+        if (!msg || /hello|hi|hey/.test(msg)) {
+          reply = `👋 Hello ${user?.name || 'Guest'}! How can I assist you today?`;
+        } else if (/hours|open|close|time/.test(msg)) {
+          reply = "⏰ Our operating hours are 9am–6pm, Monday to Saturday.";
+        } else {
+          reply = "I'm here to help! You can ask about deliveries, request quotes, or report site issues.";
+        }
+        handledLocally = true;
+        break;
+
+      case 'partFinder':
+        if (!msg || !(brand && model)) {
+          reply = "Please provide your vehicle's brand and model so I can help you find parts.";
+        } else {
+          reply = `🔧 Based on your vehicle (${brand} ${model}), you can view compatible parts.`;
+          showButton = true;
+          buttonText = "View Products";
+          buttonLink = "/product";
+        }
+        handledLocally = true;
+        break;
+
+      case 'rfq':
+        reply = "To request a quote, click the button below to go to the RFQ form.";
+        showButton = true;
+        buttonText = "Request a Quote";
+        buttonLink = "/rfq-form";
+        handledLocally = true;
+        break;
+
+     case 'delivery':
+  if (!deliveryId) {
+    reply = "Please provide a Delivery ID to get details, or click below to view all your deliveries.";
+    showButton = true;
+    buttonText = "Go to My Deliveries";
+    buttonLink = "/delivery-management";
+  } else {
+    const numericId = Number(deliveryId);
+    const delivery = await Delivery.findOne({
+      where: user?.id ? { id: numericId, customerId: user.id } : { id: numericId },
+      include: [{ model: DeliveryProduct, as: 'products' }]
+    });
+
+    if (delivery) {
+      const items = delivery.products
+        .map(p => `• ${p.quantity}x ${p.item}${p.remarks ? ` (${p.remarks})` : ''} (${p.status || 'Pending'})`)
+        .join('\n');
+
+      reply = `📦 Delivery #${delivery.id} ${user?.name ? `for ${user.name}` : ''}:\n` +
+        `${items}\nOverall Status: ${delivery.status}\n\n` +
+        `Click below to see all your deliveries or check details.`;
+
+      showButton = true;
+      buttonText = "Go to My Deliveries";
+      buttonLink = "/delivery-management";
+    } else {
+      reply = `❌ No delivery found with ID ${numericId}. You can check all your deliveries below.`;
+      showButton = true;
+      buttonText = "Go to My Deliveries";
+      buttonLink = "/delivery-management";
+    }
+  }
+  handledLocally = true;
+  break;
+
+      
+
+      default:
+        reply = "I'm here to help! Please select a valid option.";
+        handledLocally = true;
+        break;
+    }
+
+    // ==== RETURN IF HANDLED LOCALLY ====
+    if (handledLocally) {
+      return res.json({ reply, showButton, buttonText, buttonLink });
+    }
+
+    // ==== FALLBACK AI ====
+    const prompt = `
+You are a helpful assistant for an auto parts website.
+Stage: ${stage}
+User: ${user?.name || 'Guest'}
+Message: "${message}"
+Vehicle: Brand=${brand || 'N/A'}, Model=${model || 'N/A'}
+Delivery ID: ${deliveryId || 'N/A'}
+If this is a site issue, provide friendly and clear troubleshooting steps.
+Always give a specific answer to the user's issue.
+If relevant, suggest buttons for deliveries, products, or quotes.
+`;
+
     const command = new InvokeModelCommand({
-      modelId: "anthropic.claude-3-sonnet-20240229-v1:0",
-      inferenceConfiguration: {
-        stopSequences: ["\n\nHuman:"],
-        maxTokens: 500,
-        temperature: 0.7,
-      },
+      modelId: "anthropic.claude-instant-v1",  
+      inferenceConfiguration: { stopSequences: ["\n\nHuman:"], maxTokens: 500, temperature: 0.7 },
       contentType: "application/json",
       accept: "application/json",
-      body: JSON.stringify({
-        messages: [{ role: "user", content: prompt }],
-        max_tokens_to_sample: 1024,
-      }),
-      // ❗️ Required to avoid "on-demand throughput" error
+      body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens_to_sample: 1024 }),
       inferenceProfileArn: process.env.INFERENCE_PROFILE_ARN,
     });
 
     const response = await bedrockClient.send(command);
     const bodyString = new TextDecoder().decode(response.body);
     const bodyJson = JSON.parse(bodyString);
-    const aiReply = bodyJson?.content?.[0]?.text?.trim();
+    const aiReply = bodyJson?.content?.[0]?.text?.trim() || "Sorry, I couldn't generate a response.";
 
-    return res.json({ reply: aiReply || "Sorry, I couldn't generate a response." });
+    // AI can trigger buttons
+    if (/delivery/i.test(aiReply)) {
+      showButton = true;
+      buttonText = "Go to My Deliveries";
+      buttonLink = "/delivery-management";
+    } else if (/product/i.test(aiReply)) {
+      showButton = true;
+      buttonText = "View Products";
+      buttonLink = "/product";
+    } else if (/quote|quotation/i.test(aiReply)) {
+      showButton = true;
+      buttonText = "Request a Quote";
+      buttonLink = "/rfq-form";
+    }
+
+    return res.json({ reply: aiReply, showButton, buttonText, buttonLink });
 
   } catch (err) {
-    console.error("Claude API Error:", err);
-    return res.status(500).json({ error: "Claude API Error" });
+    console.error("Chatbot route error:", err);
+    return res.status(500).json({
+      reply: "Something went wrong. Please try again later.",
+      showButton: false,
+      buttonText: '',
+      buttonLink: ''
+    });
   }
 });
 

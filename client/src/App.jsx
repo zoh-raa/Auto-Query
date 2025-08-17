@@ -45,6 +45,7 @@ import ChatbotBox from './components/ChatBotBox'; // fixed casing
 // Navigator binder for react-router-dom v6
 function NavigatorBinder() {
   const navigate = useNavigate();
+
   React.useEffect(() => {
     bindNavigator(navigate);
   }, [navigate]);
@@ -61,6 +62,7 @@ function App() {
         <CartProvider>
         <ThemeProvider theme={MyTheme}>
           <MyAppBar />
+          <ChatbotBox />
           <Toaster position="top-right" /> {/* ✅ Add toaster here */}
           <Container>
             <Routes>
@@ -87,8 +89,9 @@ function App() {
               <Route path="/brand/:brandName" element={<BrandPage />} />
               <Route path="/select-delivery" element={<SelectDelivery />} />
               <Route path="/add-delivery" element={<AddDelivery />} />
-              
-              
+              <Route path="/delivery-management" element={<CustomerDeliveryManagement />} />
+              <Route path="/staff-delivery-management" element={<StaffDeliveryManagement />} />
+             
             </Routes>
           </Container>
       </ThemeProvider>

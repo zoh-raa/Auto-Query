@@ -1,8 +1,10 @@
+// StaffDeliveryManagement.jsx
+
 import React, { useEffect, useState, useRef, useContext } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Typography, Table, TableBody, TableCell, TableHead, TableRow,
-  Card, CardContent, Grid, MenuItem, Select, FormControl, InputLabel, TextField
+  Card, CardContent, Grid, MenuItem, Select, FormControl, InputLabel, TextField, CircularProgress
 } from '@mui/material';
 import { http } from '../https';
 import UserContext from '../contexts/UserContext';
@@ -14,6 +16,15 @@ const getStatusColor = (status) => {
     case 'In Progress': return 'blue';
     case 'Cancelled': return 'red';
     default: return '#555';
+  }
+};
+const getRiskColor = (riskLevel) => {
+  switch (riskLevel) {
+    case "High": return "red";
+    case "Medium": return "orange";
+    case "Low": return "green";
+    case "Info": return "blue";
+    default: return "#555";
   }
 };
 
@@ -28,7 +39,59 @@ function StaffDeliveryManagement() {
   const [phoneEdit, setPhoneEdit] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // AI Summary state
+  const [staffSummary, setStaffSummary] = useState(null);
+  const [staffSummaryLoading, setStaffSummaryLoading] = useState(false);
+
   const dialogContentRef = useRef(null);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const [delayRisk, setDelayRisk] = useState(null);
+  const [delayLoading, setDelayLoading] = useState(false);
+
+  // AI functions
+  const fetchAiSummary = async (deliveryId) => {
+    setAiLoading(true);
+    setAiSummary(null);
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await http.get(`/api/delivery/staff/${deliveryId}/ai-summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const summaryData = res.data; // { summary, risk }
+
+      let suggestions = [];
+      if (summaryData?.risk) {
+        const { riskLevel } = summaryData.risk;
+        if (riskLevel === "High") suggestions.push("Contact delivery provider to confirm timing.");
+        if (riskLevel === "Medium") suggestions.push("Monitor delivery status closely.");
+        if (riskLevel === "Low") suggestions.push("No immediate action required.");
+      }
+      setAiSummary({ ...summaryData, suggestions });
+    } catch (e) {
+      setAiSummary({ summary: "Couldn't load AI summary right now.", suggestions: [] });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const loadDelayRisk = async () => {
+    if (!selectedDelivery) return;
+    setDelayLoading(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      const res = await http.get(`/api/delivery/staff/${selectedDelivery.id}/ai-delay`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDelayRisk(res.data); // { riskLevel, riskScore }
+    } catch (e) {
+      setDelayRisk({ riskLevel: 'Unknown', riskScore: 0 });
+      console.error(e);
+    } finally {
+      setDelayLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (user && user.role === 'staff') fetchDeliveries();
@@ -37,7 +100,6 @@ function StaffDeliveryManagement() {
   const fetchDeliveries = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      if (!token) throw new Error('No token found');
       const res = await http.get('/api/delivery/staff/all', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -69,6 +131,8 @@ function StaffDeliveryManagement() {
     setSelectedDelivery(delivery);
     setEditMode(false);
     setOpenDialog(true);
+    fetchAiSummary(delivery.id);
+    loadDelayRisk();
   };
 
   const openEditDialog = (delivery) => {
@@ -108,6 +172,23 @@ function StaffDeliveryManagement() {
     }
   };
 
+  // AI: Load staff summary (pending deliveries)
+  const loadStaffSummary = async () => {
+    setStaffSummaryLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await http.get(`/api/delivery/staff/ai-summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStaffSummary(res.data?.summary || '—');
+    } catch (e) {
+      setStaffSummary('Unable to load summary.');
+      console.error('AI summary (all) error:', e);
+    } finally {
+      setStaffSummaryLoading(false);
+    }
+  };
+
   const handlePrintDialog = () => {
     document.activeElement.blur();
     if (!dialogContentRef.current) return;
@@ -133,12 +214,6 @@ function StaffDeliveryManagement() {
     printWindow.close();
   };
 
-  const isChanged = selectedDelivery && editMode && (
-    statusEdit !== (selectedDelivery.status || 'Pending') ||
-    deliveryDateEdit !== (selectedDelivery.deliveryDate || '') ||
-    phoneEdit !== (selectedDelivery?.user?.phone || '')
-  );
-
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -151,33 +226,20 @@ function StaffDeliveryManagement() {
         </Typography>
       ) : (
         deliveries.map(delivery => (
-          <Card
-            key={delivery.id}
-            sx={{ marginBottom: 2, borderRadius: 2, boxShadow: 3, backgroundColor: '#f9f9f9' }}
-          >
+          <Card key={delivery.id} sx={{ marginBottom: 2, borderRadius: 2, boxShadow: 3, backgroundColor: '#f9f9f9' }}>
             <CardContent>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                     PO Number: {delivery.poNumber}
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 'bold', color: getStatusColor(delivery.status) }}
-                  >
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: getStatusColor(delivery.status) }}>
                     Status: {delivery.status || 'Pending'}
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 'bold', color: '#1976d2' }}
-                  >
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
                     Delivery Date: {delivery.deliveryDate}
                   </Typography>
-
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 'bold', color: '#673ab7' }}
-                  >
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#673ab7' }}>
                     Timing: {delivery.timing}
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Assigned To: {delivery.assignedTo}</Typography>
@@ -197,34 +259,41 @@ function StaffDeliveryManagement() {
                 </Grid>
               </Grid>
 
-              <Button
-                variant="outlined"
-                color="info"
-                onClick={() => openViewDialog(delivery)}
-                sx={{ mt: 2, mr: 1 }}
-              >
+              <Button variant="outlined" color="info" onClick={() => openViewDialog(delivery)} sx={{ mt: 2, mr: 1 }}>
                 View
               </Button>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => openEditDialog(delivery)}
-                sx={{ mt: 2, mr: 1 }}
-              >
+              <Button variant="outlined" color="primary" onClick={() => openEditDialog(delivery)} sx={{ mt: 2, mr: 1 }}>
                 Edit
               </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={() => handleDelete(delivery.id)}
-                sx={{ mt: 2 }}
-              >
+              <Button variant="outlined" color="error" onClick={() => handleDelete(delivery.id)} sx={{ mt: 2 }}>
                 Delete
               </Button>
             </CardContent>
           </Card>
+          
         ))
       )}
+{/* AI Staff Summary Card */}
+      {staffSummary && (
+        <Card sx={{ mb: 2, borderRadius: 2, boxShadow: 3, backgroundColor: '#e3f2fd' }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+              AI Summary: Pending Deliveries
+            </Typography>
+            <Typography sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
+              {staffSummary}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Button to reload AI summary */}
+      <div style={{ marginBottom: 16 }}>
+        <Button variant="contained" onClick={loadStaffSummary} disabled={staffSummaryLoading}>
+          {staffSummaryLoading ? 'Loading AI Summary…' : 'Refresh AI Summary'}
+        </Button>
+      </div>
+      
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontWeight: 'bold', color: '#1976d2' }}>
@@ -233,6 +302,7 @@ function StaffDeliveryManagement() {
         <DialogContent ref={dialogContentRef} sx={{ fontSize: '0.95rem', color: '#333' }}>
           {selectedDelivery && (
             <>
+              {/* Delivery Info */}
               <Typography variant="h6" gutterBottom sx={{ color: '#1976d2', fontWeight: 'bold' }}>
                 Delivery Info
               </Typography>
@@ -258,11 +328,7 @@ function StaffDeliveryManagement() {
                   </FormControl>
                   <FormControl fullWidth sx={{ mt: 2 }}>
                     <InputLabel>Status</InputLabel>
-                    <Select
-                      value={statusEdit}
-                      label="Status"
-                      onChange={(e) => setStatusEdit(e.target.value)}
-                    >
+                    <Select value={statusEdit} label="Status" onChange={(e) => setStatusEdit(e.target.value)}>
                       <MenuItem value="Pending">Pending</MenuItem>
                       <MenuItem value="In Progress">In Progress</MenuItem>
                       <MenuItem value="Delivered">Delivered</MenuItem>
@@ -283,13 +349,14 @@ function StaffDeliveryManagement() {
                   </Typography>
                 </>
               )}
-              <Typography><strong>RFQ ID:</strong> {selectedDelivery.rfqId || 'N/A'}</Typography>
 
+              <Typography><strong>RFQ ID:</strong> {selectedDelivery.rfqId || 'N/A'}</Typography>
               <Typography sx={{ fontWeight: 'bold' }}>Assigned To: {selectedDelivery.assignedTo}</Typography>
               <Typography><strong>Location:</strong> {selectedDelivery.location}</Typography>
               <Typography><strong>Description:</strong> {selectedDelivery.description}</Typography>
               <Typography><strong>Delivery Provider:</strong> {selectedDelivery.deliveryProvider}</Typography>
 
+              {/* User Info */}
               <Typography variant="h6" gutterBottom sx={{ mt: 2, color: '#1976d2', fontWeight: 'bold' }}>
                 User Info
               </Typography>
@@ -297,6 +364,7 @@ function StaffDeliveryManagement() {
               <Typography sx={{ fontWeight: 'bold' }}>Email: {selectedDelivery?.user?.email}</Typography>
               <Typography sx={{ fontWeight: 'bold' }}>Phone: {selectedDelivery?.user?.phone}</Typography>
 
+              {/* Products */}
               <Typography variant="h6" gutterBottom sx={{ mt: 2, color: '#1976d2', fontWeight: 'bold' }}>
                 Products
               </Typography>
@@ -318,6 +386,38 @@ function StaffDeliveryManagement() {
                   ))}
                 </TableBody>
               </Table>
+
+              
+
+              {/* Smart Summary */}
+              <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold', color: '#388e3c' }}>
+                Summary
+              </Typography>
+              {aiLoading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <CircularProgress size={20} />
+                  <Typography>Generating summary…</Typography>
+                </div>
+              ) : (
+                <>
+                  <Typography sx={{ whiteSpace: 'pre-wrap' }}>{aiSummary?.summary || '—'}</Typography>
+                  {aiSummary?.risk && (
+                    <Typography sx={{ mt: 1, fontWeight: 'bold', color: getRiskColor(aiSummary.risk.riskLevel) }}>
+                      Delay Risk: {aiSummary.risk.riskLevel} ({aiSummary.risk.riskScore}%)
+                    </Typography>
+                  )}
+                  {aiSummary?.suggestions?.length > 0 && (
+                    <>
+                      <Typography variant="subtitle1" sx={{ mt: 1, fontWeight: 'bold' }}>Suggested Actions:</Typography>
+                      <ul>
+                        {aiSummary.suggestions.map((s, idx) => (
+                          <li key={idx} style={{ color: getRiskColor(aiSummary.risk?.riskLevel || 'Info') }}>{s}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </>
+              )}
             </>
           )}
         </DialogContent>
@@ -329,17 +429,13 @@ function StaffDeliveryManagement() {
           )}
           <Button onClick={() => setOpenDialog(false)} variant="contained" color="secondary">Close</Button>
           {editMode && (
-            <Button
-              onClick={handleStatusUpdate}
-              variant="contained"
-              color="primary"
-              disabled={!isChanged || saving}
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
+            <Button onClick={handleStatusUpdate} variant="contained" color="primary" disabled={saving || !selectedDelivery}>
+              {saving ? 'Saving…' : 'Save Changes'}
             </Button>
           )}
         </DialogActions>
       </Dialog>
+
     </div>
   );
 }
