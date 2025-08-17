@@ -9,6 +9,7 @@ require('dotenv').config();
 const axios = require('axios'); // ✅ Import this if not already
 const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
 const { LoginAttempt } = require('../models'); // ✅ Required for /security-logs
+const { sendVerification, checkVerification } = require('../utils/sms'); // ⬅️ add this
 
 // ensures staff-only product management
 // mounts my products.js under your staff.js so that uploads call staff/products
@@ -16,10 +17,10 @@ const productsRoute = require("./products");
 router.use("/products", productsRoute);
 
 router.post('/register', async (req, res) => {
-  const { staff_id, email, password, name, role } = req.body;
+  const { email, password, name, role, phone } = req.body;
 
   try {
-    const existingStaff = await Staff.findOne({ where: { email } });
+    const existingStaff = await Staff.findOne({ where: { email: (email || '').toLowerCase().trim() } });
     if (existingStaff) {
       return res.status(400).json({ message: "Email already registered" });
     }
@@ -27,31 +28,34 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newStaff = await Staff.create({
-      staff_id,
-      email,
+      email: email.toLowerCase().trim(),
       password: hashedPassword,
-      name,
-      role: role || "admin"
+      name: name.trim(),
+      phone: phone.trim(),   // ✅ added phone
+      role: role || "admin",
     });
 
-    const token = jwt.sign(
-      { id: newStaff.id, role: 'staff' },
-      process.env.APP_SECRET,
-      { expiresIn: '1h' }
-    );
+    // generate staff_id as before
+    const seq = 100 + newStaff.id;
+    const yy = new Date().getFullYear().toString().slice(-2);
+    const generatedId = `AMS${yy}S${seq}`;
+
+    await newStaff.update({ staff_id: generatedId });
+
+    const token = jwt.sign({ id: newStaff.id, role: 'staff' }, process.env.APP_SECRET, { expiresIn: '1h' });
 
     return res.status(201).json({
       message: "Staff registered successfully",
       accessToken: token,
-      staff: {
+      user: {
         id: newStaff.id,
         name: newStaff.name,
         email: newStaff.email,
+        phone: newStaff.phone,    // ✅ include phone
         staff_id: newStaff.staff_id,
         role: newStaff.role
       }
     });
-
   } catch (err) {
     console.error("❌ Registration error:", err);
     return res.status(500).json({ message: "Server error during registration" });
@@ -112,6 +116,95 @@ router.get('/auth', validateToken, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// --- STEP 1: Request OTP ---
+router.post('/recovery/request', async (req, res) => {
+  const { phone, purpose } = req.body;
+  if (!phone || !purpose) return res.status(400).json({ message: 'phone + purpose required' });
+
+  try {
+    const staff = await Staff.findOne({ where: { phone } });
+    // Always call sendVerification even if staff not found → prevents enumeration
+    await sendVerification(phone);
+
+    return res.json({ ok: true, message: 'OTP sent if account exists' });
+  } catch (err) {
+    console.error('❌ recovery/request error:', err);
+    return res.status(500).json({ message: 'Internal error' });
+  }
+});
+
+// --- STEP 2: Verify OTP ---
+router.post('/recovery/verify', async (req, res) => {
+  const { phone, otp, code, purpose } = req.body;
+  const verificationCode = otp || code;
+  if (!phone || !verificationCode || !purpose) {
+    return res.status(400).json({ message: 'phone, code, purpose required' });
+  }
+
+  try {
+    const check = await checkVerification(phone, verificationCode);
+    if (check.status !== 'approved') {
+      return res.status(400).json({ message: 'Invalid or expired code' });
+    }
+
+    const staff = await Staff.findOne({ where: { phone } });
+    if (!staff) return res.status(404).json({ message: 'Staff not found' });
+
+    // Two flows:
+    if (purpose === 'reveal_staff_id') {
+    return res.json({ ok: true, staff_id: staff.staff_id });
+    }
+
+
+    if (purpose === 'reset_password') {
+      // Generate a short-lived reset token (JWT or random string)
+      const resetToken = jwt.sign(
+        { staffId: staff.id, type: 'reset_password' },
+        process.env.JWT_SECRET,
+        { expiresIn: '15m' }
+      );
+      return res.json({ ok: true, resetToken });
+    }
+
+    return res.status(400).json({ message: 'Unknown purpose' });
+  } catch (err) {
+    console.error('❌ OTP verify error:', err);
+    return res.status(500).json({ message: 'Verification failed' });
+  }
+});
+
+// --- STEP 3: Reset Password ---
+router.post('/password/reset', async (req, res) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+    if (!resetToken || !newPassword) {
+      return res.status(400).json({ message: 'Missing token or password' });
+    }
+
+    // Verify resetToken (was signed with JWT_SECRET earlier)
+    const decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
+    const staffId = decoded.staffId;
+
+    const staff = await Staff.findByPk(staffId);
+    if (!staff) return res.status(404).json({ message: 'Staff not found' });
+
+    // Hash new password
+    const saltRounds = 10;
+    const hashed = await bcrypt.hash(newPassword, saltRounds);
+
+    // Save it
+    staff.passwordHash = hashed;
+    await staff.save();
+
+    return res.json({ message: 'Password reset successful' });
+  } catch (err) {
+    console.error('❌ reset password error:', err);
+    return res.status(400).json({ message: 'Invalid or expired reset token' });
+  }
+});
+
+
 
 const { Customer } = require('../models'); // 👈 add this at the top if missing
 
