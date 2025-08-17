@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -13,7 +12,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import toast from 'react-hot-toast';
-import { http } from '../https';
+import { http } from '../https'; // ✅ use your axios instance
 import { CartContext } from '../contexts/CartContext';
 import UserContext from '../contexts/UserContext';
 
@@ -47,7 +46,7 @@ const RFQFormPage = () => {
 
   const handleAddManualItem = () => {
     if (!manualItem.productId || !manualItem.name || manualItem.quantity <= 0) {
-      toast.error("Please fill in Product ID, Name and a valid Quantity.");
+      toast.error('Please fill in Product ID, Name and a valid Quantity.');
       return;
     }
     setItems([...items, manualItem]);
@@ -74,14 +73,16 @@ const RFQFormPage = () => {
 
   const handleSubmit = async () => {
     if (items.length === 0) {
-      toast.error("Add at least one item before submitting.");
+      toast.error('Add at least one item before submitting.');
       return;
     }
 
     setSubmitting(true);
     try {
+      const token = localStorage.getItem('accessToken');
+
       const payload = {
-        userId: user._id,
+        userId: user.id, // ✅ ensure this matches your backend (was _id before)
         items: items.map(({ name, quantity, remarks }) => ({
           product_name: name,
           quantity,
@@ -90,17 +91,21 @@ const RFQFormPage = () => {
         comments,
       };
 
-  const res = await http.post('/rfq', payload);
+      const res = await http.post('/rfq', payload, {
+        headers: {
+          Authorization: `Bearer ${token || ''}`,
+        },
+      });
+
       if (res.data.qr_code) setQrCode(res.data.qr_code);
 
-      toast.success("RFQ submitted successfully!");
+      toast.success('RFQ submitted successfully!');
       clearCart();
 
       navigate('/rfq-result', { state: { rfq: res.data } });
     } catch (error) {
-      console.error(error);
-      console.error("AxiosError", error.response?.data || error.message);
-      toast.error("Failed to submit RFQ.");
+      console.error('AxiosError', error.response?.data || error.message);
+      toast.error('Failed to submit RFQ.');
     } finally {
       setSubmitting(false);
     }
@@ -112,13 +117,19 @@ const RFQFormPage = () => {
       <Dialog open={showLoginPrompt}>
         <DialogTitle>Login to create RFQ</DialogTitle>
         <DialogContent>
-          <Typography>You must be logged in to submit a Request for Quotation.</Typography>
+          <Typography>
+            You must be logged in to submit a Request for Quotation.
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowLoginPrompt(false)} color="secondary">
             Stay on this page
           </Button>
-          <Button onClick={() => navigate('/login')} variant="contained" color="primary">
+          <Button
+            onClick={() => navigate('/login')}
+            variant="contained"
+            color="primary"
+          >
             Go to login
           </Button>
         </DialogActions>
@@ -131,9 +142,15 @@ const RFQFormPage = () => {
             Create Request for Quotation
           </Typography>
 
-          <Typography><strong>Name:</strong> {user.name}</Typography>
-          <Typography><strong>Email:</strong> {user.email}</Typography>
-          <Typography><strong>Phone:</strong> {user.phone || "N/A"}</Typography>
+          <Typography>
+            <strong>Name:</strong> {user.name}
+          </Typography>
+          <Typography>
+            <strong>Email:</strong> {user.email}
+          </Typography>
+          <Typography>
+            <strong>Phone:</strong> {user.phone || 'N/A'}
+          </Typography>
 
           <Divider sx={{ my: 2 }} />
 
@@ -142,8 +159,13 @@ const RFQFormPage = () => {
             <Typography>No items added yet.</Typography>
           ) : (
             items.map((item, i) => (
-              <Box key={i} sx={{ border: '1px solid #ccc', borderRadius: 1, p: 2, mb: 2 }}>
-                <Typography fontWeight="bold">{item.name} (Product ID: {item.productId})</Typography>
+              <Box
+                key={i}
+                sx={{ border: '1px solid #ccc', borderRadius: 1, p: 2, mb: 2 }}
+              >
+                <Typography fontWeight="bold">
+                  {item.name} (Product ID: {item.productId})
+                </Typography>
                 <TextField
                   label="Quantity"
                   type="number"
@@ -162,7 +184,12 @@ const RFQFormPage = () => {
                   multiline
                   rows={2}
                 />
-                <Button variant="outlined" color="error" onClick={() => handleRemoveItem(i)} sx={{ mt: 1 }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={() => handleRemoveItem(i)}
+                  sx={{ mt: 1 }}
+                >
                   Remove Item
                 </Button>
               </Box>
@@ -178,14 +205,18 @@ const RFQFormPage = () => {
                 fullWidth
                 margin="dense"
                 value={manualItem.productId}
-                onChange={(e) => setManualItem({ ...manualItem, productId: e.target.value })}
+                onChange={(e) =>
+                  setManualItem({ ...manualItem, productId: e.target.value })
+                }
               />
               <TextField
                 label="Name"
                 fullWidth
                 margin="dense"
                 value={manualItem.name}
-                onChange={(e) => setManualItem({ ...manualItem, name: e.target.value })}
+                onChange={(e) =>
+                  setManualItem({ ...manualItem, name: e.target.value })
+                }
               />
               <TextField
                 label="Quantity"
@@ -193,7 +224,12 @@ const RFQFormPage = () => {
                 fullWidth
                 margin="dense"
                 value={manualItem.quantity}
-                onChange={(e) => setManualItem({ ...manualItem, quantity: parseInt(e.target.value) || 1 })}
+                onChange={(e) =>
+                  setManualItem({
+                    ...manualItem,
+                    quantity: parseInt(e.target.value) || 1,
+                  })
+                }
                 inputProps={{ min: 1 }}
               />
               <TextField
@@ -201,9 +237,15 @@ const RFQFormPage = () => {
                 fullWidth
                 margin="dense"
                 value={manualItem.remarks}
-                onChange={(e) => setManualItem({ ...manualItem, remarks: e.target.value })}
+                onChange={(e) =>
+                  setManualItem({ ...manualItem, remarks: e.target.value })
+                }
               />
-              <Button variant="outlined" onClick={handleAddManualItem} sx={{ mt: 1 }}>
+              <Button
+                variant="outlined"
+                onClick={handleAddManualItem}
+                sx={{ mt: 1 }}
+              >
                 Add to RFQ
               </Button>
             </>
@@ -241,7 +283,7 @@ const RFQFormPage = () => {
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {submitting ? "Submitting..." : "Submit RFQ"}
+            {submitting ? 'Submitting...' : 'Submit RFQ'}
           </Button>
         </>
       )}

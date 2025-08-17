@@ -71,7 +71,7 @@ router.post('/', async (req, res) => {
 
           if (delivery) {
             const items = delivery.products
-              .map(p => `• ${p.quantity}x ${p.item}${p.remarks ? ` (${p.remarks})` : ''} (${p.status || 'Pending'})`)
+              .map(p => `• ${p.quantity}x ${p.item}${p.remarks ? ` (${p.remarks})` : ''}${p.status ? ` (${p.status})` : ''}`)
               .join('\n');
 
             reply = `📦 Delivery #${delivery.id} ${user?.name ? `for ${user.name}` : ''}:\n` +

@@ -82,29 +82,29 @@ function ChatbotBox({ user }) {
 
   // Inside ChatbotBox.jsx
 
-// Highlight delivery items with status colors
-const formatMessage = (msg) => {
-  if (stage === 'delivery' && msg.includes('•')) {
-    const lines = msg.split('\n');
+  // Highlight delivery items with status colors
+  const formatMessage = (msg) => {
+    if (stage === 'delivery' && msg.includes('•')) {
+      const lines = msg.split('\n');
 
-    return lines.map((line, index) => {
-      const match = line.match(/• (\d+)x (.*?)\s*(?:\((.*?)\))?$/);
-      if (!match) return <div key={index}>{line}</div>;
+      return lines.map((line, index) => {
+        const match = line.match(/• (\d+)x (.*?)\s*(?:\((.*?)\))?$/);
+        if (!match) return <div key={index}>{line}</div>;
 
-      const quantity = match[1];
-      const item = match[2];
-      const status = match[3] || 'Pending'; // default to Pending
+        const quantity = match[1];
+        const item = match[2];
+        const status = match[3] || 'Pending'; // default to Pending
 
-      return (
-        <div key={index} style={{ marginBottom: '4px' }}>
-          <span>{quantity}x {item} ({status})</span>
-        </div>
-      );
-    });
-  }
+        return (
+          <div key={index} style={{ marginBottom: '4px' }}>
+            <span>{quantity}x {item} ({status})</span>
+          </div>
+        );
+      });
+    }
 
-  return <div>{msg}</div>; // fallback for other messages
-};
+    return <div>{msg}</div>; // fallback for other messages
+  };
 
 
 
@@ -146,7 +146,7 @@ const formatMessage = (msg) => {
               const isUser = m.type === 'user';
               return (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start' }}>
-                  <p style={{
+                  <div style={{
                     color: isUser ? '#1976d2' : '#444',
                     textAlign: isUser ? 'right' : 'left',
                     fontWeight: isUser ? '600' : '400',
@@ -160,7 +160,7 @@ const formatMessage = (msg) => {
                     gap: '4px'
                   }}>
                     {formatMessage(m.text)}
-                  </p>
+                  </div>
                   <span style={{ fontSize: '0.7em', color: '#888', marginTop: '2px' }}>
                     {m.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>

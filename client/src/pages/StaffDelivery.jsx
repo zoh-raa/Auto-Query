@@ -219,6 +219,26 @@ function StaffDeliveryManagement() {
       <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
         Staff: All Deliveries
       </Typography>
+      {/* AI Staff Summary Card */}
+      {staffSummary && (
+        <Card sx={{ mb: 2, borderRadius: 2, boxShadow: 3, backgroundColor: '#e3f2fd' }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+              AI Summary: Pending Deliveries
+            </Typography>
+            <Typography sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
+              {staffSummary}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Button to reload AI summary */}
+      <div style={{ marginBottom: 16 }}>
+        <Button variant="contained" onClick={loadStaffSummary} disabled={staffSummaryLoading}>
+          {staffSummaryLoading ? 'Loading AI Summary…' : 'Refresh AI Summary'}
+        </Button>
+      </div>
 
       {deliveries.length === 0 ? (
         <Typography variant="body1" color="textSecondary" sx={{ mt: 4, textAlign: 'center' }}>
@@ -270,30 +290,9 @@ function StaffDeliveryManagement() {
               </Button>
             </CardContent>
           </Card>
-          
+
         ))
       )}
-{/* AI Staff Summary Card */}
-      {staffSummary && (
-        <Card sx={{ mb: 2, borderRadius: 2, boxShadow: 3, backgroundColor: '#e3f2fd' }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-              AI Summary: Pending Deliveries
-            </Typography>
-            <Typography sx={{ whiteSpace: 'pre-wrap', mt: 1 }}>
-              {staffSummary}
-            </Typography>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Button to reload AI summary */}
-      <div style={{ marginBottom: 16 }}>
-        <Button variant="contained" onClick={loadStaffSummary} disabled={staffSummaryLoading}>
-          {staffSummaryLoading ? 'Loading AI Summary…' : 'Refresh AI Summary'}
-        </Button>
-      </div>
-      
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontWeight: 'bold', color: '#1976d2' }}>
@@ -387,7 +386,7 @@ function StaffDeliveryManagement() {
                 </TableBody>
               </Table>
 
-              
+
 
               {/* Smart Summary */}
               <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold', color: '#388e3c' }}>
