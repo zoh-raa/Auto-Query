@@ -49,49 +49,49 @@ router.post('/', async (req, res) => {
         break;
 
       case 'rfq':
-        reply = "To request a quote, click the button below to go to the RFQ form.";
+        reply = "To request a quote, click the button below to go to the RFQ form. But need add item to cart first.";
         showButton = true;
         buttonText = "Request a Quote";
         buttonLink = "/rfq-form";
         handledLocally = true;
         break;
 
-     case 'delivery':
-  if (!deliveryId) {
-    reply = "Please provide a Delivery ID to get details, or click below to view all your deliveries.";
-    showButton = true;
-    buttonText = "Go to My Deliveries";
-    buttonLink = "/delivery-management";
-  } else {
-    const numericId = Number(deliveryId);
-    const delivery = await Delivery.findOne({
-      where: user?.id ? { id: numericId, customerId: user.id } : { id: numericId },
-      include: [{ model: DeliveryProduct, as: 'products' }]
-    });
+      case 'delivery':
+        if (!deliveryId) {
+          reply = "Please provide a Delivery ID to get details, or click below to view all your deliveries.";
+          showButton = true;
+          buttonText = "Go to My Deliveries";
+          buttonLink = "/delivery-management";
+        } else {
+          const numericId = Number(deliveryId);
+          const delivery = await Delivery.findOne({
+            where: user?.id ? { id: numericId, customerId: user.id } : { id: numericId },
+            include: [{ model: DeliveryProduct, as: 'products' }]
+          });
 
-    if (delivery) {
-      const items = delivery.products
-        .map(p => `• ${p.quantity}x ${p.item}${p.remarks ? ` (${p.remarks})` : ''} (${p.status || 'Pending'})`)
-        .join('\n');
+          if (delivery) {
+            const items = delivery.products
+              .map(p => `• ${p.quantity}x ${p.item}${p.remarks ? ` (${p.remarks})` : ''} (${p.status || 'Pending'})`)
+              .join('\n');
 
-      reply = `📦 Delivery #${delivery.id} ${user?.name ? `for ${user.name}` : ''}:\n` +
-        `${items}\nOverall Status: ${delivery.status}\n\n` +
-        `Click below to see all your deliveries or check details.`;
+            reply = `📦 Delivery #${delivery.id} ${user?.name ? `for ${user.name}` : ''}:\n` +
+              `${items}\nOverall Status: ${delivery.status}\n\n` +
+              `Click below to see all your deliveries or check details.`;
 
-      showButton = true;
-      buttonText = "Go to My Deliveries";
-      buttonLink = "/delivery-management";
-    } else {
-      reply = `❌ No delivery found with ID ${numericId}. You can check all your deliveries below.`;
-      showButton = true;
-      buttonText = "Go to My Deliveries";
-      buttonLink = "/delivery-management";
-    }
-  }
-  handledLocally = true;
-  break;
+            showButton = true;
+            buttonText = "Go to My Deliveries";
+            buttonLink = "/delivery-management";
+          } else {
+            reply = `❌ No delivery found with ID ${numericId}. You can check all your deliveries below.`;
+            showButton = true;
+            buttonText = "Go to My Deliveries";
+            buttonLink = "/delivery-management";
+          }
+        }
+        handledLocally = true;
+        break;
 
-      
+
 
       default:
         reply = "I'm here to help! Please select a valid option.";
@@ -118,7 +118,7 @@ If relevant, suggest buttons for deliveries, products, or quotes.
 `;
 
     const command = new InvokeModelCommand({
-      modelId: "anthropic.claude-instant-v1",  
+      modelId: "anthropic.claude-instant-v1",
       inferenceConfiguration: { stopSequences: ["\n\nHuman:"], maxTokens: 500, temperature: 0.7 },
       contentType: "application/json",
       accept: "application/json",
