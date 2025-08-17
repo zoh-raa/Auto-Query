@@ -377,7 +377,10 @@ router.post('/verify-otp', async (req, res) => {
  */
 router.post('/reset-password', async (req, res) => {
   try {
-    const { resetToken, newPassword, confirmPassword } = req.body;
+    // Accept token from body.resetToken OR body.token OR query.token
+    const resetToken = req.body?.resetToken || req.body?.token || req.query?.token;
+    const { newPassword, confirmPassword } = req.body || {};
+
     if (!resetToken) return res.status(400).json({ message: 'Missing token' });
     if (!newPassword || newPassword.length < 8) {
       return res.status(400).json({ message: 'Password must be at least 8 characters' });
@@ -388,17 +391,28 @@ router.post('/reset-password', async (req, res) => {
 
     let payload;
     try {
-      payload = jwt.verify(resetToken, process.env.APP_SECRET);
-    } catch {
+      payload = jwt.verify(resetToken, process.env.APP_SECRET); // must match the secret used when issuing
+    } catch (err) {
+      console.error('[RESET] JWT verify failed:', err.message);
       return res.status(401).json({ message: 'Invalid or expired token' });
     }
 
-    const otpRec = await PasswordResetOtp.findByPk(payload.otpId);
-    if (!otpRec || otpRec.used || otpRec.email !== payload.email) {
+    // payload must contain email and otpId; ensure your "issue token" code sets these
+    const { email, otpId } = payload || {};
+    if (!email || !otpId) {
+      console.error('[RESET] Token missing email or otpId', payload);
       return res.status(400).json({ message: 'Invalid reset request' });
     }
 
-    const user = await Customer.findOne({ where: { email: payload.email } });
+    const otpRec = await PasswordResetOtp.findByPk(otpId);
+    if (!otpRec) return res.status(400).json({ message: 'Invalid reset request' });
+    if (otpRec.used) return res.status(400).json({ message: 'Reset link already used' });
+    if (otpRec.email !== email) return res.status(400).json({ message: 'Invalid reset request' });
+    if (otpRec.expiresAt && new Date(otpRec.expiresAt) < new Date()) {
+      return res.status(400).json({ message: 'Reset link expired' });
+    }
+
+    const user = await Customer.findOne({ where: { email } });
     if (!user) return res.status(400).json({ message: 'Invalid reset request' });
 
     user.password = await bcrypt.hash(newPassword, 10);
@@ -407,28 +421,21 @@ router.post('/reset-password', async (req, res) => {
     otpRec.used = true;
     await otpRec.save();
 
-    // Notify user that password changed, include quick lock link
-    const lockToken = jwt.sign(
-      { email: user.email, typ: 'lock' },
-      process.env.APP_SECRET,
-      { expiresIn: '2h' }
-    );
-
-    const lockUrl = `https://your-frontend.example.com/lock-account?token=${lockToken}`;
+    const lockToken = jwt.sign({ email, typ: 'lock' }, process.env.APP_SECRET, { expiresIn: '2h' });
+    const lockUrl = `${process.env.FRONTEND_BASE_URL}/lock-account?token=${lockToken}`;
 
     await sendMail({
-      to: user.email,
-      subject: 'Your AMS password was changed',
+      to: email,
+      subject: 'Your password was changed',
       html: `
         <p>Your password was changed successfully.</p>
-        <p>If this was you, you can ignore this email.</p>
         <p>If this was not you, <a href="${lockUrl}">lock your account immediately</a>.</p>
       `
     });
 
     return res.json({ ok: true });
   } catch (e) {
-    console.error(e);
+    console.error('[RESET] Server error:', e);
     res.status(500).json({ message: 'Server error' });
   }
 });

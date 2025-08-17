@@ -69,12 +69,14 @@ export default function ForgotPasswordFlow({ role = 'customer', onBack, onReveal
         });
 
         // If we are revealing Staff ID
-        if (isStaff && purpose === 'reveal_staff_id') {
-          const id = res?.data?.staff_id;
-          if (!id) return toast.error('Could not retrieve Staff ID');
-          onRevealStaffId?.(id); // SlideAuthPanel will show StaffIdReceipt
-          return;
-        }
+       if (isStaff && purpose === 'reveal_staff_id') {
+        const id = res?.data?.staff_id;
+        if (!id) return toast.error('Could not retrieve Staff ID');
+        onRevealStaffId?.(id);
+        // After showing Staff ID, redirect to staff login
+        return;
+      }
+
 
         // Otherwise it's a password reset flow
         const token = res?.data?.resetToken;
@@ -97,12 +99,22 @@ export default function ForgotPasswordFlow({ role = 'customer', onBack, onReveal
     }),
     onSubmit: async (v) => {
       try {
-        await http.post(endpoints.reset, { resetToken, newPassword: v.newPassword.trim() });
-        toast.success('Password changed successfully');
-        setStep('done');
-        setTimeout(() => {
-          onResetComplete ? onResetComplete() : onBack?.();
-        }, 1200);
+            await http.post(endpoints.reset, { 
+        resetToken, 
+        newPassword: v.newPassword.trim(),
+        confirmPassword: v.confirmPassword.trim()
+      });
+      toast.success('Password changed successfully');
+      setStep('done');
+      setTimeout(() => {
+        if (isStaff) {
+          // staff → back to staff login
+          onResetComplete ? onResetComplete('staff') : onBack?.('staff');
+        } else {
+          // customer → back to customer login
+          onResetComplete ? onResetComplete('customer') : onBack?.('customer');
+        }
+      }, 1200);
       } catch (err) {
         toast.error(err?.response?.data?.message || 'Could not reset password');
       }
