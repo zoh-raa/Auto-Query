@@ -36,17 +36,22 @@ const renderForm = () => {
   if (mode === 'forgot') {
     return (
       <ForgotPasswordFlow
-        role={role}
-        onBack={() => setMode('auth')}
-        onRevealStaffId={(id) => {
-          setStaffNewId(id);     // <- save the revealed staff_id
-          setMode('staff-id');   // <- switch to the receipt screen
-        }}
-        onResetComplete={() => {
-          // after password reset, send them to Staff Login in-panel
+        role={role} // ✅ use role from state
+        onBack={(target) => {
+          // go back to the right login screen
           setMode('auth');
-          setRole('staff');
+          setRole(target === 'staff' ? 'staff' : 'customer');
           setTab(0);
+        }}
+        onResetComplete={(target) => {
+          // after reset, go to login screen of that role
+          setMode('auth');
+          setRole(target === 'staff' ? 'staff' : 'customer');
+          setTab(0);
+        }}
+        onRevealStaffId={(id) => {
+          setStaffNewId(id);
+          setMode('staff-id');
         }}
       />
     );
@@ -73,6 +78,7 @@ const renderForm = () => {
       );
   }
 };
+
 
 
   return (
