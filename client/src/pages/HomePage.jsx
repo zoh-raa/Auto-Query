@@ -234,9 +234,12 @@ const HomePage = () => {
         <div className="cart-summary">
           <span>Total $150</span>
           <button onClick={() => {
-            addToCart({ productId: 1, name: "Yamaha BYSON Exhaust", quantity: 1, remarks: "" });
-            addToCart({ productId: 2, name: "RACING Honda CBR500R Tail Tidy", quantity: 1, remarks: "" });
-            addToCart({ productId: 3, name: "Yamaha Aerox GDR155 Oil Pump", quantity: 1, remarks: "" });
+            const allProducts = [
+              { productId: 1, name: "Yamaha BYSON Exhaust", quantity: 1, remarks: "" },
+              { productId: 2, name: "RACING Honda CBR500R Tail Tidy", quantity: 1, remarks: "" },
+              { productId: 3, name: "Yamaha Aerox GDR155 Oil Pump", quantity: 1, remarks: "" }
+            ];
+            allProducts.forEach(product => addToCart(product));
             toast.success("All frequently bought parts added to cart!");
           }}>Add All to Cart</button>
         </div>
@@ -293,11 +296,23 @@ const HomePage = () => {
         ) : (
           <div className="parts-grid">
             {aiRecs && aiRecs.length > 0 ? aiRecs.map((rec, idx) => (
-              <div key={rec.productId || rec.id || idx} className="part-card clickable-product"
-                onClick={e => handleProductClick(rec, e)}
+              <div
+                key={rec.productId || rec.id || idx}
+                className="part-card clickable-product"
+                tabIndex={0}
                 style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                onClick={e => {
+                  console.log('Clicked product:', rec.productId || rec.id, rec);
+                  handleProductClick(rec, e);
+                }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleProductClick(rec, e);
+                  }
+                }}
                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
                 <img
                   src={
                     rec.imageUrl

@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState, useContext } from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import UserContext from '../contexts/UserContext';
-import axios from 'axios';
+import { http } from '../https'; // use your custom axios instance
 
 const MyRFQsPage = () => {
   const { user, loading } = useContext(UserContext);
@@ -11,34 +12,27 @@ const MyRFQsPage = () => {
   const navigate = useNavigate();
 
   // Redirect if not logged in
+
   useEffect(() => {
-    if (!loading && !user) {
+    // Only fetch when user is loaded
+    if (typeof loading === 'undefined' || loading) return;
+    if (!user) {
       navigate('/login');
+      return;
     }
   }, [loading, user, navigate]);
 
   // Fetch RFQs with JWT token
   useEffect(() => {
-    const fetchRFQs = async () => {
-      if (!user) return;
-
-      try {
-        const token = localStorage.getItem('accessToken'); // get JWT
-        const res = await axios.get('http://localhost:3001/rfq/my', {
-          headers: {
-            Authorization: `Bearer ${token || ''}`
-          }
-        });
-        setRfqs(Array.isArray(res.data) ? res.data : []);
-      } catch (err) {
-        console.error('Error fetching RFQs:', err.response?.data || err.message);
-        setRfqs([]);
-      } finally {
-        setLoadingRfqs(false);
-      }
-    };
-
-    fetchRFQs();
+    if (user) {
+      http.get('/rfq/my')
+        .then(res => setRfqs(Array.isArray(res.data) ? res.data : []))
+        .catch(err => {
+          console.error(err);
+          setRfqs([]);
+        })
+        .finally(() => setLoadingRfqs(false));
+    }
   }, [user]);
 
   const getStatusColor = (status) => {
@@ -55,14 +49,10 @@ const MyRFQsPage = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this RFQ?')) return;
     try {
-      const token = localStorage.getItem('accessToken');
-      await axios.delete(`http://localhost:3001/rfq/${id}`, {
-        headers: { Authorization: `Bearer ${token || ''}` }
-      });
-
-      // remove from state
-      setRfqs((prevRfqs) => prevRfqs.filter((r) => r.id !== id));
-      alert('RFQ deleted successfully!');
+  await http.delete(`/rfq/${id}`);
+  // remove from state
+  setRfqs((prevRfqs) => prevRfqs.filter((r) => r.id !== id));
+  alert('RFQ deleted successfully!');
     } catch (err) {
       console.error('Failed to delete RFQ', err.response?.data || err.message);
       alert('Failed to delete RFQ.');

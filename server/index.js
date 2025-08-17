@@ -31,8 +31,9 @@ app.get("/", (req, res) => {
 });
 
 // Serve static files
+const path = require('path');
 app.use('/uploads', express.static('uploads'));
-app.use('/images', express.static('../client/images')); // Serve client images
+app.use('/images', express.static(path.join(__dirname, '../client/images'))); // Serve client images
 
 // Load Routes
 const customerRoute = require('./routes/customer');

@@ -32,16 +32,16 @@ router.post('/recommend', async (req, res) => {
 	prompt += `\nRecommend 3 products for this user. Reply as a JSON array of objects with name, reason, and image fields. Example: [{"name": "...", "reason": "...", "image": "..."}]`;
 
 	const command = new InvokeModelCommand({
-		modelId: "anthropic.claude-3-sonnet-20240229-v1:0",
+		modelId: "amazon.titan-text-express-v1",
 		contentType: "application/json",
 		accept: "application/json",
 		body: JSON.stringify({
-			messages: [
-				{ role: "user", content: prompt }
-			],
-			max_tokens: 300,
-			temperature: 0.7,
-			anthropic_version: "bedrock-2023-05-31"
+			inputText: prompt,
+			textGenerationConfig: {
+				maxTokenCount: 300,
+				temperature: 0.7,
+				topP: 0.9
+			}
 		})
 	});
 
@@ -67,6 +67,7 @@ router.post('/recommend', async (req, res) => {
 			// Fallback: pick 3 random real products as mock recommendations
 			const shuffled = products.sort(() => 0.5 - Math.random());
 			recommendations = shuffled.slice(0, 3).map(p => ({
+				productId: p.productId,
 				name: p.productName || p.name,
 				price: p.price,
 				image: p.imageUrl || p.image || '',
@@ -74,16 +75,14 @@ router.post('/recommend', async (req, res) => {
 			}));
 		}
 		// Attach image URLs from real products if missing
-		recommendations = recommendations.map(rec => {
-			if (!rec.image) {
+			recommendations = recommendations.map(rec => {
 				// Try to find product by name (case-insensitive)
 				const match = products.find(p => (p.productName || p.name).toLowerCase() === (rec.name || '').toLowerCase());
 				if (match) {
-					return { ...rec, image: match.imageUrl || match.image || '' };
+					return { ...rec, productId: match.productId, image: match.imageUrl || match.image || '' };
 				}
-			}
-			return rec;
-		});
+				return rec;
+			});
 		res.json({ recommendations });
 	} catch (err) {
 		console.error(err);
@@ -91,6 +90,7 @@ router.post('/recommend', async (req, res) => {
 		const products = await Product.findAll({ limit: 20 });
 		const shuffled = products.sort(() => 0.5 - Math.random());
 		const recommendations = shuffled.slice(0, 3).map(p => ({
+			productId: p.productId,
 			name: p.productName || p.name,
 			price: p.price,
 			image: p.imageUrl || p.image || '',
