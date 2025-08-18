@@ -12,6 +12,7 @@
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.864.0",
     "@google/generative-ai": "^0.24.1",
+    "@react-google-maps/api": "^2.20.7",
     "@sendgrid/mail": "^8.1.5",
     "axios": "^1.11.0",
     "bcrypt": "^5.1.1",

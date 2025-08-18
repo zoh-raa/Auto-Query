@@ -64,10 +64,21 @@ const MyRFQsPage = () => {
   // Keyword filter
   const handleFilter = () => {
     if (!query) return setFilteredRfqs(rfqs);
+    const lowerQuery = query.toLowerCase();
     const filtered = rfqs.filter(rfq =>
+      // Product name
       rfq.RFQItems?.some(item =>
-        item.product_name.toLowerCase().includes(query.toLowerCase())
-      ) || (rfq.remarks && rfq.remarks.toLowerCase().includes(query.toLowerCase()))
+        item.product_name.toLowerCase().includes(lowerQuery)
+      ) ||
+      // Remarks
+      (rfq.remarks && rfq.remarks.toLowerCase().includes(lowerQuery)) ||
+      // RFQ number/code
+      (rfq.rfq_number && rfq.rfq_number.toLowerCase().includes(lowerQuery)) ||
+      (rfq.id && String(rfq.id).toLowerCase().includes(lowerQuery)) ||
+      // Status
+      (rfq.status && rfq.status.toLowerCase().includes(lowerQuery)) ||
+      // Date (createdAt)
+      (rfq.createdAt && new Date(rfq.createdAt).toLocaleString().toLowerCase().includes(lowerQuery))
     );
     setFilteredRfqs(filtered);
   };
