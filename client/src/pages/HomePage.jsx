@@ -235,9 +235,9 @@ const HomePage = () => {
           <span>Total $150</span>
           <button onClick={() => {
             const allProducts = [
-              { productId: 1, name: "Yamaha BYSON Exhaust", quantity: 1, remarks: "" },
-              { productId: 2, name: "RACING Honda CBR500R Tail Tidy", quantity: 1, remarks: "" },
-              { productId: 3, name: "Yamaha Aerox GDR155 Oil Pump", quantity: 1, remarks: "" }
+              { productId: 1, name: "Yamaha BYSON Exhaust", quantity: 1, remarks: "", price: 45, image: "/images/part1.png" },
+              { productId: 2, name: "RACING Honda CBR500R Tail Tidy", quantity: 1, remarks: "", price: 65, image: "/images/part2.png" },
+              { productId: 3, name: "Yamaha Aerox GDR155 Oil Pump", quantity: 1, remarks: "", price: 40, image: "/images/part3.png" }
             ];
             allProducts.forEach(product => addToCart(product));
             toast.success("All frequently bought parts added to cart!");
@@ -262,7 +262,14 @@ const HomePage = () => {
             <p className="bundle-price">$300 Bundle</p>
             <button onClick={e => {
               e.stopPropagation();
-              addToCart({ productId: 101, name: "YAMAHA Aerox 50 Service Bundle", quantity: 1, remarks: "" });
+              addToCart({
+                productId: 101,
+                name: "YAMAHA Aerox 50 Service Bundle",
+                quantity: 1,
+                remarks: "",
+                imageUrl: "part4.png", // Use first part as bundle image
+                price: 300
+              });
               toast.success("YAMAHA bundle added to cart!");
             }}>Add Bundle to Cart</button>
           </div>
@@ -279,7 +286,14 @@ const HomePage = () => {
             <p className="bundle-price">$275 Bundle</p>
             <button onClick={e => {
               e.stopPropagation();
-              addToCart({ productId: 102, name: "HONDA Touring Essentials Bundle", quantity: 1, remarks: "" });
+              addToCart({
+                productId: 102,
+                name: "HONDA Touring Essentials Bundle",
+                quantity: 1,
+                remarks: "",
+                imageUrl: "part8.png", // Use first part as bundle image
+                price: 275
+              });
               toast.success("HONDA bundle added to cart!");
             }}>Add Bundle to Cart</button>
           </div>

@@ -43,6 +43,7 @@ export const CartProvider = ({ children }) => {
 
   // Cart manipulation functions
   const addToCart = (product) => {
+    console.log('addToCart called with:', product);
     setCart(prev => {
       const existing = prev.find(item => item.productId === product.productId);
       if (existing) {

@@ -47,15 +47,23 @@ const CartPage = () => {
         cart.map(item => (
           <Box key={item.productId} display="flex" alignItems="center" mb={2} p={1} border="1px solid #ddd" borderRadius={2}>
             <img
-              src={item.image || '/images/no-image.png'}
+              src={
+                item.imageUrl
+                  ? item.imageUrl.startsWith('/images/')
+                    ? `http://localhost:3001${item.imageUrl}`
+                    : `http://localhost:3001/images/${item.imageUrl}`
+                  : item.image && (item.image.startsWith('http') || item.image.startsWith('/'))
+                    ? item.image
+                    : '/images/no-image.png'
+              }
               alt={item.name || 'Product'}
               style={{ width: 80, height: 80, objectFit: 'cover', marginRight: 16 }}
             />
             <Box flexGrow={1}>
               <Typography variant="subtitle1">{item.name || 'Unknown Product'}</Typography>
-              <Typography variant="body2">Price: ${item.price?.toFixed(2) || '0.00'}</Typography>
+              <Typography variant="body2">Price: ${!isNaN(Number(item.price)) ? Number(item.price).toFixed(2) : '0.00'}</Typography>
               <Typography variant="body2">Remarks: {item.remarks || '-'}</Typography>
-              <Typography variant="body2">Subtotal: ${(item.price * item.quantity).toFixed(2)}</Typography>
+              <Typography variant="body2">Subtotal: {!isNaN(Number(item.price)) ? (Number(item.price) * item.quantity).toFixed(2) : '0.00'}</Typography>
             </Box>
             <Box display="flex" alignItems="center">
               <Button onClick={() => decreaseQty(item.productId)}>-</Button>

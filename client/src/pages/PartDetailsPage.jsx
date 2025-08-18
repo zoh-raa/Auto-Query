@@ -44,7 +44,13 @@ const PartDetailsPage = () => {
           {part.imageUrl ? (
             <Box
               component="img"
-              src={`http://localhost:3001/uploads/${part.imageUrl}`}
+              src={
+                part.imageUrl
+                  ? part.imageUrl.startsWith('/images/')
+                    ? `http://localhost:3001${part.imageUrl}`
+                    : `http://localhost:3001/images/${part.imageUrl}`
+                  : '/images/no-image.png'
+              }
               alt={part.productName}
               sx={{ width: '100%', maxHeight: 400, objectFit: 'contain', borderRadius: 2 }}
             />

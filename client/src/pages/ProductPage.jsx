@@ -63,9 +63,9 @@ const ProductPage = () => {
                   component="img"
                   src={
                     part.imageUrl
-                      ? part.imageUrl.startsWith('/uploads/')
+                      ? part.imageUrl.startsWith('/images/')
                         ? `http://localhost:3001${part.imageUrl}`
-                        : `http://localhost:3001/uploads/${part.imageUrl}`
+                        : `http://localhost:3001/images/${part.imageUrl}`
                       : part.image && (part.image.startsWith('http') || part.image.startsWith('/'))
                         ? part.image
                         : '/images/no-image.png'

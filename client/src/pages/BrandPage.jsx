@@ -43,7 +43,9 @@ const BrandPage = () => {
     addToCart({
       productId: product.productId,
       name: product.productName,
-      price: product.price,
+      // Ensure price is a number
+      price: Number(product.price),
+      image: product.imageUrl, // for CartPage compatibility
       imageUrl: product.imageUrl,
       quantity: 1
     });
