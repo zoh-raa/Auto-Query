@@ -314,42 +314,46 @@ router.post('/inactivity-likelihood', async (req, res) => {
 router.get("/security-logs", async (req, res) => {
   try {
     const logs = await LoginAttempt.findAll({
-      order: [['createdAt', 'DESC']],
-      limit: 50
+      order: [["createdAt", "DESC"]],
+      limit: 50,
     });
 
-    const logsWithGeo = await Promise.all(logs.map(async log => {
-      try {
-        // call Google Maps Geocoding API
-        const geoRes = await axios.get(
-          "https://maps.googleapis.com/maps/api/geocode/json",
-          { params: { address: log.location, key: apiKey } }
-        );
+    const logsWithGeo = await Promise.all(
+      logs.map(async (log) => {
+        const loc = (log.location || "").trim();
 
-        if (geoRes.data.status === "OK" && geoRes.data.results[0]) {
-          const { lat, lng } = geoRes.data.results[0].geometry.location;
-          return {
-            ...log.dataValues,
-            latitude: lat,
-            longitude: lng
-          };
+        // If "lat,lng" pattern → parse directly
+        const latLngMatch = loc.match(
+          /^\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*$/
+        );
+        if (latLngMatch) {
+          const lat = parseFloat(latLngMatch[1]);
+          const lng = parseFloat(latLngMatch[3]);
+          return { ...log.dataValues, latitude: lat, longitude: lng };
         }
 
-        // fallback when no results
-        return {
-          ...log.dataValues,
-          latitude: null,
-          longitude: null
-        };
-      } catch (err) {
-        console.error("Geocode error:", log.location, err.message);
-        return {
-          ...log.dataValues,
-          latitude: null,
-          longitude: null
-        };
-      }
-    }));
+        // Otherwise, geocode a human-readable location string
+        try {
+          const geoRes = await axios.get(
+            "https://maps.googleapis.com/maps/api/geocode/json",
+            { params: { address: loc, key: apiKey } }
+          );
+          if (
+            geoRes.data.status === "OK" &&
+            geoRes.data.results &&
+            geoRes.data.results[0]
+          ) {
+            const { lat, lng } = geoRes.data.results[0].geometry.location;
+            return { ...log.dataValues, latitude: lat, longitude: lng };
+          }
+        } catch (e) {
+          console.error("Geocode error:", loc, e.message);
+        }
+
+        // Fallback
+        return { ...log.dataValues, latitude: null, longitude: null };
+      })
+    );
 
     res.json(logsWithGeo);
   } catch (err) {
