@@ -14,6 +14,8 @@ const jwt = require('jsonwebtoken');
 const { sendMail } = require('../utils/mailer');
 const OTP_TTL_MIN = parseInt(process.env.RESET_OTP_TTL_MINUTES || '10', 10);
 const makeOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+// Nanyang Polytechnic (Ang Mo Kio Ave 8) — "lat,lng"
+const NYP_COORDS = "1.3793, 103.8499";
 
 
 
@@ -83,9 +85,7 @@ router.post('/google-login', async (req, res) => {
       await Customer.increment('login_count', { where: { id: customer.id } });
     }
 
-    // Optional: log Google login like regular login (no anomaly scoring for now)
-
-     // write a LoginAttempt for Google sign in
+    // --- Log Google login like regular login ---
     try {
       // extract client ip
       let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
@@ -95,26 +95,57 @@ router.post('/google-login', async (req, res) => {
 
       // geo lookup
       let location = 'Localhost';
-      if (ip && ip !== '127.0.0.1') {
-        try {
+      try {
+        if (ip && ip !== '127.0.0.1') {
           const geoRes = await axios.get(`https://ipapi.co/${ip}/json/`, { timeout: 1500 });
           const city = geoRes.data.city || 'Unknown';
           const region = geoRes.data.region || 'Unknown';
           const country = geoRes.data.country_name || 'Unknown';
           location = `${city}, ${region}, ${country}`;
-        } catch (e) {
-          console.warn('Geo lookup failed:', e.message);
         }
+      } catch (e) {
+        console.warn('Geo lookup failed:', e.message);
       }
 
       const device = req.headers['user-agent'] || 'Unknown';
 
+      // anomaly scoring
+      let anomaly_label = "Low";
+      let forceNyp = false;
+      try {
+        const previousLogin = await LoginAttempt.findOne({
+          where: { email: customer.email },
+          order: [["createdAt", "DESC"]],
+        });
+        const hasBaseline = !!previousLogin;
+
+        const sameDevice   = hasBaseline && previousLogin.device   === device;
+        const sameIP       = hasBaseline && previousLogin.ip       === ip;
+        const sameLocation = hasBaseline && previousLogin.location === location;
+
+        anomaly_label = await classifyAnomaly({ sameDevice, sameIP, sameLocation, hasBaseline });
+        if (!["Low", "Medium", "High"].includes(anomaly_label)) {
+          anomaly_label = "Low";
+        }
+      } catch (e) {
+        console.warn("Anomaly scoring failed:", e.message);
+        anomaly_label = "Medium"; // fallback
+      }
+
+      // ✅ Force NYP fallback if localhost or lookup failed
+      if (ip === "127.0.0.1" || location === "Localhost") {
+        anomaly_label = "Medium";
+        location = NYP_COORDS;
+      }
+
+      const locationForRow = forceNyp ? NYP_COORDS : location;
+
       const row = await LoginAttempt.create({
         email: customer.email,
         ip,
-        location,
+        location: locationForRow,
         device,
-        anomaly_score: 0
+        anomaly_score: anomaly_label
       });
       console.log('Google LoginAttempt id:', row.id);
     } catch (e) {
@@ -135,6 +166,7 @@ router.post('/google-login', async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
 
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
@@ -227,58 +259,80 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ message: errorMsg });
     }
 
-    await Customer.increment('login_count', { where: { id: customer.id } });
+    await Customer.increment("login_count", { where: { id: customer.id } });
 
-    let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+    // IP
+    let ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "";
+    if (typeof ip === "string" && ip.includes(",")) ip = ip.split(",")[0].trim();
     if (ip.includes("::ffff:")) ip = ip.split("::ffff:")[1];
-    if (ip === '::1' || ip === '127.0.0.1') ip = '127.0.0.1';
+    if (ip === "::1") ip = "127.0.0.1";
 
+    // Location
     let location = "Unknown";
     try {
-      if (ip && ip !== '127.0.0.1') {
+      if (ip && ip !== "127.0.0.1") {
         const geoRes = await axios.get(`https://ipapi.co/${ip}/json/`, { timeout: 1500 });
-        location = `${geoRes.data.city || 'Unknown'}, ${geoRes.data.region || 'Unknown'}, ${geoRes.data.country_name || 'Unknown'}`;
+        const city = geoRes.data.city || "Unknown";
+        const region = geoRes.data.region || "Unknown";
+        const country = geoRes.data.country_name || "Unknown";
+        location = `${city}, ${region}, ${country}`;
       } else {
-        location = 'Localhost';
+        location = "Localhost";
       }
     } catch (e) {
       console.warn("IPAPI lookup failed:", e.message);
     }
 
-    const device = req.headers['user-agent'] || "Unknown";
+    const device = req.headers["user-agent"] || "Unknown";
 
-    let anomaly_score = 0;
+    // Anomaly scoring with baseline guard and string label
+    let anomaly_label = "Low";
+    let forceNyp = false; // 👈 track fallback
     try {
       const previousLogin = await LoginAttempt.findOne({
         where: { email: customer.email },
-        order: [['createdAt', 'DESC']]
+        order: [["createdAt", "DESC"]]
       });
-      const sameDevice = previousLogin?.device === device;
-      const sameIP = previousLogin?.ip === ip;
-      const sameLocation = previousLogin?.location === location;
-      anomaly_score = await classifyAnomaly({ sameDevice, sameIP, sameLocation });
+      const hasBaseline = !!previousLogin;
+
+      const sameDevice   = hasBaseline && previousLogin.device   === device;
+      const sameIP       = hasBaseline && previousLogin.ip       === ip;
+      const sameLocation = hasBaseline && previousLogin.location === location;
+
+      anomaly_label = await classifyAnomaly({ sameDevice, sameIP, sameLocation, hasBaseline });
+      if (!["Low", "Medium", "High"].includes(anomaly_label)) {
+        anomaly_label = "Low";
+      }
     } catch (e) {
       console.warn("Anomaly scoring failed:", e.message);
+      anomaly_label = "Medium"; // 👈 your requirement
     }
 
+    if (ip === "127.0.0.1" || location === "Localhost") {
+      anomaly_label = "Medium";
+      location = NYP_COORDS;
+    }
+
+    // Final location for DB
+    const locationForRow = forceNyp ? NYP_COORDS : location;
+
+    // Store login attempt
     try {
       const row = await LoginAttempt.create({
         email: customer.email,
         ip,
-        location,
+        location: locationForRow, // 👈 fallback goes here
         device,
-        anomaly_score
+        anomaly_score: anomaly_label
       });
       console.log("LoginAttempt inserted id:", row.id);
     } catch (dbErr) {
       console.error("Failed to insert LoginAttempt:", dbErr);
-      // continue, do not block user login
     }
 
     const userInfo = { id: customer.id, email: customer.email, name: customer.name };
-
     const accessToken = sign(
-      { id: customer.id, role: 'customer' },
+      { id: customer.id, role: "customer" },
       process.env.APP_SECRET,
       { expiresIn: process.env.TOKEN_EXPIRES_IN }
     );
@@ -289,6 +343,7 @@ router.post("/login", async (req, res) => {
     res.status(400).json({ errors: err.errors || [err.message] });
   }
 });
+
 
 
 // Step 1. Request OTP
